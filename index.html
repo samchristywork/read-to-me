@@ -27,5 +27,44 @@
   <button id="prev" onclick='prevAudio()'>Prev</button>
 </body>
 <script>
+  var shas = [];
+  var currentIndex = 0;
+  var currentAudio = null;
+  var currentSpeed = 1.0;
+  var sessionID = null;
+
+  function nextAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.remove();
+    }
+    currentIndex++;
+    if (currentIndex < shas.length) {
+      playAudioSequence();
+    }
+  }
+
+  function prevAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.remove();
+    }
+    currentIndex--;
+    if (currentIndex >= 0) {
+      playAudioSequence();
+    }
+  }
+
+  function pauseAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+    }
+  }
+
+  function resumeAudio() {
+    if (currentAudio) {
+      currentAudio.play();
+    }
+  }
 </script>
 </html>
