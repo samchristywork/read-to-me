@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func fileExists(filename string) bool {
@@ -24,6 +25,7 @@ func tts(inputText string, shaSum string) error {
 	outputFilename := fmt.Sprintf("data/output-%s.mp3", shaSum)
 
 	if fileExists(outputFilename) {
+		fmt.Println("File already exists:", outputFilename)
 		return nil
 	}
 
@@ -72,6 +74,10 @@ func tts(inputText string, shaSum string) error {
 	return nil
 }
 
+func splitText(text string) []string {
+	return strings.Split(text, "\n")
+}
+
 func main() {
 	filename := "data.sqlite"
 	db, err := sql.Open("sqlite3", filename)
@@ -85,6 +91,27 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
+	})
+
+	http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Sha   string `json:"sha"`
+			Title string `json:"title"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		_, err = db.Exec("INSERT INTO posts (title, sha1) VALUES (?, ?)", data.Title, data.Sha)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "{\"status\": \"ok\"}")
 	})
 
 	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
