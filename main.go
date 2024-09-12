@@ -115,10 +115,54 @@ func main() {
 	})
 
 	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
-		text := r.FormValue("text")
-		sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(text)))
-		fmt.Println("Text:", text)
-		fmt.Println("SHA1:", sha1)
+		var data struct {
+			Text string `json:"text"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		sessionID := fmt.Sprintf("%x", sha1.Sum([]byte(data.Text)))
+		sessionFilename := fmt.Sprintf("data/session-%s.txt", sessionID)
+
+		sessionFile, err := os.Create(sessionFilename)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer sessionFile.Close()
+		sessionFile.Write([]byte(data.Text))
+
+		shas := []string{}
+
+		fragments := splitText(data.Text)
+
+		for _, fragment := range fragments {
+			text := fragment
+
+			if len(text) == 0 {
+				continue
+			}
+
+			sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(text)))
+			fmt.Println("Text:", text)
+			fmt.Println("SHA1:", sha1)
+			shas = append(shas, fmt.Sprintf("\"%s\"", sha1))
+
+			err = tts(text, sha1)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		fmt.Fprintf(w, "{"+
+			"\"shas\": ["+strings.Join(shas, ", ")+"],"+
+			"\"sessionID\": \""+sessionID+"\"}")
+	})
 
 		http.ServeFile(w, r, fmt.Sprintf("data/output-%s.mp3", sha1))
 	})
