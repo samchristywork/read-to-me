@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Reading</title>
@@ -11,13 +11,20 @@
 </head>
 
 <body>
-  <h1>Reading</h1>
-  <p>Enter text to synthesize:</p>
-  <form action="/synthesize" method="post">
-    <textarea name="text" rows="4" cols="50"></textarea>
-    <br />
-    <input type="submit" value="Synthesize" />
-  </form>
+  <button id="removeCitations" onclick='removeCitations()'>Remove Wiki-style Citations</button>
+  <textarea id="text" name="text" rows="30" cols="120"></textarea> <br>
+  <button id="synthesize" onclick='synthesizeAudio()'>Synthesize</button>
+  <button id="pause" onclick='pauseAudio()'>Pause</button>
+  <button id="resume" onclick='resumeAudio()'>Resume</button>
+  <button id="restart" onclick='restartAudio()'>Restart</button>
+  <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
+  <span id="speedValue">1.0</span>
+  <input type="text" id="title" name="title" placeholder="Title">
+  <span id="totalDuration">Total Duration</span>
+  <span id="progress">Progress</span>
+  <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
+  <button id="next" onclick='nextAudio()'>Next</button>
+  <button id="prev" onclick='prevAudio()'>Prev</button>
 </body>
 <script>
 </script>
