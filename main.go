@@ -5,7 +5,11 @@ import (
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 	"context"
 	"crypto/sha1"
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
+	"log"
 	"net/http"
 	"os"
 )
@@ -69,6 +73,16 @@ func tts(inputText string, shaSum string) error {
 }
 
 func main() {
+	filename := "data.sqlite"
+	db, err := sql.Open("sqlite3", filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS posts (title TEXT, sha1 TEXT)")
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	})

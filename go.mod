@@ -2,7 +2,10 @@ module reading-app
 
 go 1.21.6
 
-require cloud.google.com/go/texttospeech v1.8.0
+require (
+	cloud.google.com/go/texttospeech v1.8.0
+	github.com/mattn/go-sqlite3 v1.14.23
+)
 
 require (
 	cloud.google.com/go v0.115.1 // indirect
