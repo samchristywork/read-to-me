@@ -11,20 +11,29 @@
 </head>
 
 <body>
-  <button id="removeCitations" onclick='removeCitations()'>Remove Wiki-style Citations</button>
-  <textarea id="text" name="text" rows="30" cols="120"></textarea> <br>
-  <button id="synthesize" onclick='synthesizeAudio()'>Synthesize</button>
-  <button id="pause" onclick='pauseAudio()'>Pause</button>
-  <button id="resume" onclick='resumeAudio()'>Resume</button>
-  <button id="restart" onclick='restartAudio()'>Restart</button>
-  <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
-  <span id="speedValue">1.0</span>
-  <input type="text" id="title" name="title" placeholder="Title">
-  <span id="totalDuration">Total Duration</span>
-  <span id="progress">Progress</span>
-  <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
-  <button id="next" onclick='nextAudio()'>Next</button>
-  <button id="prev" onclick='prevAudio()'>Prev</button>
+  <div id="editor">
+    <input type="text" id="title" name="title" placeholder="Title"><br>
+    <input type="source" id="source" name="source" placeholder="Source"><br>
+    <textarea id="text" name="text" rows="30" cols="120"></textarea> <br>
+    <button id="synthesize" onclick='synthesizeAudio()'>Synthesize</button>
+    <button id="removeCitations" onclick='removeCitations()'>Remove Wiki-style Citations</button>
+  </div>
+  <hr>
+  <div id="display">
+    <div id="viewport">View</div>
+    <span id="totalDuration">Total Duration</span>
+    <span id="progress">0/0</span>
+  </div>
+  <hr>
+  <div id="controls">
+    <button id="playpause" onclick='playPauseAudio()'>Pause</button>
+    <button id="restart" onclick='restartAudio()'>Restart</button>
+    <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
+    <span id="speedValue">1.0</span>
+    <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
+    <button id="prev" onclick='prevAudio()'>Prev</button>
+    <button id="next" onclick='nextAudio()'>Next</button>
+  </div>
 </body>
 <script>
   var shas = [];
