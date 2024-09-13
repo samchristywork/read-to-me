@@ -187,8 +187,7 @@ func main() {
 			"\"sessionID\": \""+sessionID+"\"}")
 	})
 
-		http.ServeFile(w, r, fmt.Sprintf("data/output-%s.mp3", sha1))
-	})
+	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))
 
 	fmt.Println("Listening on port 8080")
 	http.ListenAndServe(":8080", nil)
