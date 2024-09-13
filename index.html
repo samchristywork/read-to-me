@@ -64,15 +64,32 @@
     }
   }
 
-  function pauseAudio() {
+  function playPauseAudio() {
     if (currentAudio) {
-      currentAudio.pause();
+      if (currentAudio.paused) {
+        currentAudio.play();
+        document.getElementById('playpause').innerText = "Pause";
+      } else {
+        currentAudio.pause();
+        document.getElementById('playpause').innerText = "Play";
+      }
     }
   }
 
-  function resumeAudio() {
+  function restartAudio() {
+    currentIndex = 0;
     if (currentAudio) {
-      currentAudio.play();
+      currentAudio.pause();
+      currentAudio.remove();
+    }
+    playAudioSequence();
+  }
+
+  function setAudioSpeed(speed) {
+    document.getElementById('speedValue').innerText = speed;
+    currentSpeed = speed;
+    if (currentAudio) {
+      currentAudio.playbackRate = speed;
     }
   }
 </script>
