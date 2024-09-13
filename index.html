@@ -118,5 +118,30 @@
       }
     };
   }
+
+  function synthesizeAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.remove();
+    }
+
+    var text = document.getElementById('text').value;
+    fetch('/synthesize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({text: text})
+    }).then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      console.log(data);
+      shas = data['shas'];
+      sessionID = data['sessionID'];
+      currentIndex = 0;
+
+      playAudioSequence();
+    });
+  }
 </script>
 </html>
