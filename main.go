@@ -78,6 +78,38 @@ func splitText(text string) []string {
 	return strings.Split(text, "\n")
 }
 
+func processFragments(fragments []string) (error, []string) {
+	shas := make([]string, len(fragments))
+	errChan := make(chan error)
+	shaChan := make(chan string)
+
+	for n, fragment := range fragments {
+		go func(fragment string, n int) {
+			sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(fragment)))
+			shas[n] = fmt.Sprintf("\"%s\"", sha1)
+
+			err := tts(fragment, sha1)
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			shaChan <- sha1
+		}(fragment, n)
+	}
+
+	for i := 0; i < len(fragments); i++ {
+		select {
+		case err := <-errChan:
+			return err, shas
+		case sha := <-shaChan:
+			fmt.Println("Processed", sha)
+		}
+	}
+
+	return nil, shas
+}
+
 func main() {
 	filename := "data.sqlite"
 	db, err := sql.Open("sqlite3", filename)
@@ -136,27 +168,18 @@ func main() {
 		defer sessionFile.Close()
 		sessionFile.Write([]byte(data.Text))
 
-		shas := []string{}
-
 		fragments := splitText(data.Text)
 
-		for _, fragment := range fragments {
-			text := fragment
-
-			if len(text) == 0 {
-				continue
+		for i := 0; i < len(fragments); i++ {
+			if len(fragments[i]) == 0 {
+				fragments = append(fragments[:i], fragments[i+1:]...)
+				i--
 			}
+		}
 
-			sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(text)))
-			fmt.Println("Text:", text)
-			fmt.Println("SHA1:", sha1)
-			shas = append(shas, fmt.Sprintf("\"%s\"", sha1))
-
-			err = tts(text, sha1)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+		err, shas := processFragments(fragments)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		fmt.Fprintf(w, "{"+
