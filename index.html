@@ -92,5 +92,31 @@
       currentAudio.playbackRate = speed;
     }
   }
+
+  function playAudioSequence() {
+    var text = "data/text-"+shas[currentIndex]+".txt";
+    fetch(text).then(function(response) {
+      return response.text();
+    }).then(function(data) {
+      document.getElementById('viewport').innerText = data;
+    });
+
+    document.getElementById('progress').innerText = (currentIndex+1) + "/" + shas.length;
+    var audio = new Audio("data/output-"+shas[currentIndex]+".mp3");
+    audio.play();
+    audio.playbackRate = currentSpeed;
+    currentAudio = audio;
+    audio.onloadedmetadata = function() {
+      console.log("Playing audio of duration " + audio.duration + " seconds");
+    };
+
+    audio.onended = function() {
+      audio.remove();
+      currentIndex++;
+      if (currentIndex < shas.length) {
+        playAudioSequence();
+      }
+    };
+  }
 </script>
 </html>
