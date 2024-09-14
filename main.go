@@ -250,6 +250,23 @@ func main() {
 		fmt.Fprintf(w, "{\"status\": \"ok\"}")
 	})
 
+	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		username := r.Form.Get("username")
+		email := r.Form.Get("email")
+		password := r.Form.Get("password")
+
+		hash := fmt.Sprintf("%x", sha1.Sum([]byte(password)))
+
+		_, err := db.Exec("INSERT INTO users (username, email, passwordHash) VALUES (?, ?, ?)", username, email, hash)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "{\"status\": \"ok\"}")
+	})
+
 	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Title   string `json:"title"`
