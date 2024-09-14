@@ -132,6 +132,22 @@ func main() {
 		return
 	}
 
+	http.HandleFunc("/create.html", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "index.html")
+	})
+
+	http.HandleFunc("/user.html", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "user.html")
+	})
+
+	http.HandleFunc("/login.html", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "login.html")
+	})
+
+	http.HandleFunc("/signup.html", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "signup.html")
+	})
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	})
