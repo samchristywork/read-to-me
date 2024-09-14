@@ -13,16 +13,18 @@
 <body>
   <div id="editor">
     <input type="text" id="title" name="title" placeholder="Title"><br>
-    <input type="source" id="source" name="source" placeholder="Source"><br>
+    <input type="text" id="source" name="source" placeholder="Source"><br>
     <textarea id="text" name="text" rows="30" cols="120"></textarea> <br>
     <button id="synthesize" onclick='synthesizeAudio()'>Synthesize</button>
     <button id="removeCitations" onclick='removeCitations()'>Remove Wiki-style Citations</button>
     <input type="text" id="wikipedia" name="wikipedia" placeholder="Wikipedia"><br>
     <button id="searchWiki" onclick='searchWiki()'>Search Wikipedia</button>
+    <button id="post" onclick='post()'>Post</button>
   </div>
   <hr>
   <div id="display">
     <div id="viewport">View</div>
+    <span id="durationPlayed">DurationPlayed</span>
     <span id="totalDuration">Total Duration</span>
     <span id="progress">0/0</span>
   </div>
@@ -145,6 +147,12 @@
         playAudioSequence();
       }
     };
+  }
+
+  function formatDuration(duration) {
+    var minutes = Math.floor(duration / 60);
+    var seconds = Math.floor(duration % 60);
+    return minutes + "m " + seconds + "s";
   }
 
   function synthesizeAudio() {
