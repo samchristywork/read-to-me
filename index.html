@@ -192,5 +192,33 @@
       });
     });
   }
+
+  function removeCitations() {
+    var text = document.getElementById('text').value;
+    var newText = text.replace(/\[\w+\]/g, '');
+    document.getElementById('text').value = newText;
+  }
+
+  function post() {
+    if (!sessionID) {
+      return;
+    }
+
+    var text = document.getElementById('text').value;
+    fetch('/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sha: sessionID,
+        title: document.getElementById('title').value,
+      })
+    }).then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      console.log(data);
+    });
+  }
 </script>
 </html>
