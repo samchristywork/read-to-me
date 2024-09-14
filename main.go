@@ -147,6 +147,47 @@ func main() {
 		fmt.Fprintf(w, "{\"status\": \"ok\"}")
 	})
 
+	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Username string `json:"username"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		fmt.Println("Received user:", data.Username)
+
+		rows, err := db.Query("SELECT title FROM posts WHERE username = ?", data.Username)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var titles []string
+		for rows.Next() {
+			var title string
+			err = rows.Scan(&title)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			titles = append(titles, title)
+		}
+
+		titlesJSON, err := json.Marshal(titles)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, string(titlesJSON))
+	})
+
 	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Text string `json:"text"`
