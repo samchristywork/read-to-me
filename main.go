@@ -120,7 +120,17 @@ func main() {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS posts (title TEXT, sha1 TEXT)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS posts (title TEXT, sha1 TEXT, username TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (username TEXT, email TEXT, passwordHash TEXT)")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
