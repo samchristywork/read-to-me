@@ -229,6 +229,27 @@ func main() {
 			"\"sessionID\": \""+sessionID+"\"}")
 	})
 
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		username := r.Form.Get("username")
+		password := r.Form.Get("password")
+
+		var passwordHash string
+		err := db.QueryRow("SELECT passwordHash FROM users WHERE username = ?", username).Scan(&passwordHash)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		hash := fmt.Sprintf("%x", sha1.Sum([]byte(password)))
+		if hash != passwordHash {
+			http.Error(w, "Invalid password", http.StatusUnauthorized)
+			return
+		}
+
+		fmt.Fprintf(w, "{\"status\": \"ok\"}")
+	})
+
 	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Title   string `json:"title"`
