@@ -39,6 +39,7 @@
 </body>
 <script>
   var shas = [];
+  var audios = [];
   var currentIndex = 0;
   var currentAudio = null;
   var currentSpeed = 1.0;
@@ -128,7 +129,8 @@
     });
 
     document.getElementById('progress').innerText = (currentIndex+1) + "/" + shas.length;
-    var audio = new Audio("data/output-"+shas[currentIndex]+".mp3");
+    var audio = audios[currentIndex];
+    audio.currentTime = 0;
     audio.play();
     audio.playbackRate = currentSpeed;
     currentAudio = audio;
@@ -166,7 +168,20 @@
       sessionID = data['sessionID'];
       currentIndex = 0;
 
-      playAudioSequence();
+      audios = shas.map(sha => new Audio("data/output-"+sha+".mp3"));
+
+      var loaded = 0;
+      var duration = 0;
+      audios.forEach(audio => {
+        audio.onloadeddata = function() {
+          loaded++;
+          duration += audio.duration;
+          if (loaded == audios.length) {
+            document.getElementById('totalDuration').innerText = formatDuration(duration);
+            playAudioSequence();
+          }
+        };
+      });
     });
   }
 </script>
