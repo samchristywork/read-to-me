@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"github.com/trietmn/go-wiki"
 )
 
 func fileExists(filename string) bool {
@@ -185,6 +186,65 @@ func main() {
 		fmt.Fprintf(w, "{"+
 			"\"shas\": ["+strings.Join(shas, ", ")+"],"+
 			"\"sessionID\": \""+sessionID+"\"}")
+	})
+
+	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Title   string `json:"title"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		title := data.Title
+
+		fmt.Println("Searching for", title)
+
+		searchResult, _, err := gowiki.Search(title, 1, false)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if len(searchResult) == 0 {
+			http.Error(w, "No results found", http.StatusNotFound)
+			return
+		}
+
+		page, err := gowiki.GetPage(searchResult[0], -1, false, true)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		title = page.Title
+		url := page.URL
+		content, err := page.GetContent()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := struct {
+			Title   string `json:"title"`
+			URL     string `json:"url"`
+			Content string `json:"content"`
+		}{
+			Title:   title,
+			URL:     url,
+			Content: content,
+		}
+
+		responseJSON, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, string(responseJSON))
 	})
 
 	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))

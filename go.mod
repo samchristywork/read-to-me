@@ -5,6 +5,7 @@ go 1.21.6
 require (
 	cloud.google.com/go/texttospeech v1.8.0
 	github.com/mattn/go-sqlite3 v1.14.23
+	github.com/trietmn/go-wiki v1.0.3
 )
 
 require (
@@ -13,6 +14,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	cloud.google.com/go/longrunning v0.5.12 // indirect
+	github.com/anaskhan96/soup v1.2.5 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
