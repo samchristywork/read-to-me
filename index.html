@@ -221,6 +221,22 @@
     });
   }
 
+  setInterval(() => {
+    if (currentAudio) {
+      var progress = currentAudio.currentTime / currentAudio.duration;
+
+      var viewport = document.getElementById('viewport');
+      var text = viewport.innerText;
+      var textLength = text.length;
+      var progressIdx = Math.floor(progress * textLength);
+      var highlightedText = text.substring(0, progressIdx) + "<span style='background-color: yellow;'>" + text.substring(progressIdx, progressIdx+1) + "</span>" + text.substring(progressIdx+1);
+      viewport.innerHTML = highlightedText;
+
+      var previous = currentIndex > 0 ? audios.slice(0, currentIndex).reduce((acc, audio) => acc + audio.duration, 0) : 0;
+      document.getElementById('durationPlayed').innerText = formatDuration(previous + currentAudio.currentTime);
+    }
+  }, 1000/30);
+
 document.getElementById('text').focus();
 </script>
 </html>
