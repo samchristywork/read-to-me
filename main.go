@@ -112,6 +112,15 @@ func processFragments(fragments []string) (error, []string) {
 }
 
 func main() {
+	logName := "server.log"
+	logFile, err := os.OpenFile(logName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	log.SetOutput(logFile)
+
 	filename := "data.sqlite"
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
