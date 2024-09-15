@@ -173,7 +173,7 @@ func main() {
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO posts (title, sha1) VALUES (?, ?)", data.Title, data.Sha)
+		_, err = db.Exec("INSERT INTO posts (title, sha1, username) VALUES (?, ?, ?)", data.Title, data.Sha, "sam")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
