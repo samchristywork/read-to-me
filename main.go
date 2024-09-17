@@ -135,7 +135,15 @@ func main() {
 		return
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (username TEXT, email TEXT, passwordHash TEXT)")
+	_, err = db.Exec(`
+CREATE TABLE IF NOT EXISTS users(
+  ID INTEGER PRIMARY KEY,
+  Joined_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  Username TEXT NOT NULL UNIQUE,
+  PasswordHash TEXT NOT NULL,
+  Email TEXT NOT NULL UNIQUE,
+	Verified BOOLEAN DEFAULT FALSE
+);`)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -250,7 +258,7 @@ func main() {
 		password := r.Form.Get("password")
 
 		var passwordHash string
-		err := db.QueryRow("SELECT passwordHash FROM users WHERE username = ?", username).Scan(&passwordHash)
+		err := db.QueryRow("SELECT PasswordHash FROM users WHERE username = ?", username).Scan(&passwordHash)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -273,7 +281,7 @@ func main() {
 
 		hash := fmt.Sprintf("%x", sha1.Sum([]byte(password)))
 
-		_, err := db.Exec("INSERT INTO users (username, email, passwordHash) VALUES (?, ?, ?)", username, email, hash)
+		_, err := db.Exec("INSERT INTO users (Username, Email, PasswordHash) VALUES (?, ?, ?)", username, email, hash)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
