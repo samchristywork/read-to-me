@@ -12,17 +12,36 @@
 
 <body>
   <h1>Sign Up</h1>
-  <form action="signup" method="post">
-    <label for="username">Username:</label>
-    <input type="text" name="username" id="username" required>
-    <br>
-    <label for="email">Email:</label>
-    <input type="email" name="email" id="email" required>
-    <br>
-    <label for="password">Password:</label>
-    <input type="password" name="password" id="password" required>
-    <br>
-    <input type="submit" value="Sign Up">
-  </form>
+  <label for="username">Username:</label>
+  <input type="text" name="username" id="username" required>
+  <br>
+  <label for="email">Email:</label>
+  <input type="email" name="email" id="email" required>
+  <br>
+  <label for="password">Password:</label>
+  <input type="password" name="password" id="password" required>
+  <br>
+  <input type="submit" value="Sign Up" onclick="signup()">
 </body>
+<script>
+function signup() {
+  fetch('/signup', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      username: document.querySelector("#username").value,
+      password: document.querySelector("#password").value,
+      email: document.querySelector("#email").value
+    })
+  }).then(function(response) {
+    return response.json();
+  }).then(function(data) {
+    console.log(data);
+  });
+}
+
+document.querySelector("#username").focus();
+</script>
 </html>
