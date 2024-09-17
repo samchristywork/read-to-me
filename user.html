@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reading</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+    </style>
+</head>
+
+<body>
+  <h1 id="name"></h1>
+  <div id="posts"></div>
+</body>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const username = urlParams.get('u');
+
+  fetch('/user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({username: username})
+  }).then(function(response) {
+    return response.json();
+  }).then(function(data) {
+    document.getElementById('name').innerHTML = username;
+    console.log(data);
+    data.forEach(function(post) {
+      console.log(post);
+      var div = document.createElement('div');
+      div.innerHTML = post;
+      document.getElementById('posts').appendChild(div);
+    });
+  });
+</script>
+</html>
