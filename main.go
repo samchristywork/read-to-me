@@ -279,7 +279,21 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		response := struct {
+			Status   string `json:"status"`
+			Username string `json:"username"`
+		}{
+			Status:   "ok",
+			Username: data.Username,
+		}
+
+		responseJSON, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, errorStatus, http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, string(responseJSON))
 	})
 
 	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
