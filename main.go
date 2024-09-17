@@ -9,11 +9,11 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/trietmn/go-wiki"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"github.com/trietmn/go-wiki"
 )
 
 func fileExists(filename string) bool {
@@ -140,26 +140,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	http.HandleFunc("/create.html", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
-
-	http.HandleFunc("/user.html", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "user.html")
-	})
-
-	http.HandleFunc("/login.html", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "login.html")
-	})
-
-	http.HandleFunc("/signup.html", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "signup.html")
-	})
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
 
 	http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
@@ -304,7 +284,7 @@ func main() {
 
 	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
-			Title   string `json:"title"`
+			Title string `json:"title"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -362,6 +342,8 @@ func main() {
 	})
 
 	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))
+
+	http.Handle("/", http.FileServer(http.Dir("static")))
 
 	fmt.Println("Listening on port 8080")
 	http.ListenAndServe(":8080", nil)
