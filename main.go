@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+var errorStatus = "{\"status\": \"error\"}";
+
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
 	return !os.IsNotExist(err)
@@ -142,7 +144,7 @@ CREATE TABLE IF NOT EXISTS users(
   Username TEXT NOT NULL UNIQUE,
   PasswordHash TEXT NOT NULL,
   Email TEXT NOT NULL UNIQUE,
-	Verified BOOLEAN DEFAULT FALSE
+  Verified BOOLEAN DEFAULT FALSE
 );`)
 	if err != nil {
 		fmt.Println(err)
@@ -253,20 +255,27 @@ CREATE TABLE IF NOT EXISTS users(
 	})
 
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		username := r.Form.Get("username")
-		password := r.Form.Get("password")
+		var data struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
 
-		var passwordHash string
-		err := db.QueryRow("SELECT PasswordHash FROM users WHERE username = ?", username).Scan(&passwordHash)
+		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus, http.StatusBadRequest)
 			return
 		}
 
-		hash := fmt.Sprintf("%x", sha1.Sum([]byte(password)))
+		var passwordHash string
+		err = db.QueryRow("SELECT PasswordHash FROM users WHERE username = ?", data.Username).Scan(&passwordHash)
+		if err != nil {
+			http.Error(w, errorStatus, http.StatusInternalServerError)
+			return
+		}
+
+		hash := fmt.Sprintf("%x", sha1.Sum([]byte(data.Password)))
 		if hash != passwordHash {
-			http.Error(w, "Invalid password", http.StatusUnauthorized)
+			http.Error(w, errorStatus, http.StatusUnauthorized)
 			return
 		}
 
@@ -274,16 +283,23 @@ CREATE TABLE IF NOT EXISTS users(
 	})
 
 	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		username := r.Form.Get("username")
-		email := r.Form.Get("email")
-		password := r.Form.Get("password")
+		var data struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+			Email    string `json:"email"`
+		}
 
-		hash := fmt.Sprintf("%x", sha1.Sum([]byte(password)))
-
-		_, err := db.Exec("INSERT INTO users (Username, Email, PasswordHash) VALUES (?, ?, ?)", username, email, hash)
+		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus, http.StatusBadRequest)
+			return
+		}
+
+		hash := fmt.Sprintf("%x", sha1.Sum([]byte(data.Password)))
+
+		_, err = db.Exec("INSERT INTO users (Username, Email, PasswordHash) VALUES (?, ?, ?)", data.Username, data.Email, hash)
+		if err != nil {
+			http.Error(w, errorStatus, http.StatusInternalServerError)
 			return
 		}
 
