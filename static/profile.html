@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Log Out</title>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <div class="container">
+    <h1>Profile</h1>
+
+    <div id="info">Not Logged In</div>
+  </div>
+</body>
+<script>
+function getCookie(cname) {
+  let name = cname + "=";
+  let ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
+let username=getCookie("username")
+let token=getCookie("token")
+
+if (token != "") {
+  fetch('/profile', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      token: token,
+    })
+  }).then(function(response) {
+    return response.json();
+  }).then(function(data) {
+    if (data.status=="ok") {
+      document.querySelector("#info").innerHTML=`
+        <div>Username: ${data.username}</div>
+        <div>Credits: ${data.credits}</div>
+      `;
+    } else {
+      document.querySelector("#info").innerHTML=`
+        <div>Error: ${data.error}</div>
+      `;
+    }
+  });
+}
+</script>
+</html>
