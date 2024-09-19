@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Verify Email</title>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <div class="container">
+    <h1>Verifying Account</h1>
+    <p>Please wait while your account is being verified. This process should take less than a minute.</p>
+  </div>
+</body>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const username = urlParams.get('u');
+  const key = urlParams.get('k');
+
+  fetch('/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      username: username,
+      key: key
+    })
+  }).then(function(response) {
+    return response.json();
+  }).then(function(data) {
+    if (data.status != "ok") {
+      document.querySelector("h1").innerText = "Error";
+      document.querySelector("p").innerText = "Something went wrong. Please contact the administrator.";
+    } else {
+      document.querySelector("h1").innerText = "Success";
+      document.querySelector("p").innerHTML = "Account creation successful. Please <a href='/login.html'>login</a>.";
+    }
+  });
+</script>
+</html>
