@@ -13,6 +13,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strings"
 	"time"
@@ -123,6 +124,63 @@ func processFragments(fragments []string) (error, []string) {
 	}
 
 	return nil, shas
+}
+
+func readJSONFile(filename string) (map[string]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data := make(map[string]string)
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func sendRegistrationEmail(username string, email string, code string) error {
+	creds, err := readJSONFile("creds.json")
+	if err != nil {
+		return err
+	}
+
+	to := []string{email}
+
+	msg := []byte("To: " + email + "\r\n" +
+		"Subject: Account Created\r\n" +
+		"MIME-version: 1.0;\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\";\r\n\r\n" +
+		"\r\n" +
+		"<html><body><h1>Registration</h1>" +
+		"<a href='localhost:8080/verify.html?u=" + username + "&k=" + code + "'>Registration link</a>.\r\n" +
+		username + "\r\n" +
+		"</body></html>\r\n",
+	)
+
+	auth := smtp.PlainAuth(
+		"",
+		creds["sender"],
+		creds["password"],
+		"smtp.gmail.com",
+	)
+
+	err = smtp.SendMail(
+		"smtp.gmail.com:587",
+		auth,
+		creds["sender"],
+		to,
+		msg,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func main() {
