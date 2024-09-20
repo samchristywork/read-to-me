@@ -26,6 +26,10 @@ type Session struct {
 
 var sessionMap = make(map[string]Session)
 
+func errorStatus(message string) string {
+	return fmt.Sprintf("{\"status\": \"error\", \"error\": \"%s\"}", message)
+}
+
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
 	return !os.IsNotExist(err)
@@ -180,7 +184,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		_, err = db.Exec("INSERT INTO posts (title, sha1, username) VALUES (?, ?, ?)", data.Title, data.Sha, "sam")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Could Not Post"), http.StatusInternalServerError)
 			return
 		}
 
@@ -195,7 +199,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
 			return
 		}
 
@@ -207,7 +211,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		rows, err := db.Query("SELECT title FROM posts WHERE username = ?", data.Username)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Could Not Get Posts"), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -217,7 +221,7 @@ CREATE TABLE IF NOT EXISTS users(
 			var title string
 			err = rows.Scan(&title)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, errorStatus("Could Not Get Posts"), http.StatusInternalServerError)
 				return
 			}
 
@@ -226,7 +230,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		titlesJSON, err := json.Marshal(titles)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Could Not Get Posts"), http.StatusInternalServerError)
 			return
 		}
 
@@ -250,7 +254,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		sessionFile, err := os.Create(sessionFilename)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
 			return
 		}
 		defer sessionFile.Close()
@@ -267,7 +271,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		err, shas := processFragments(fragments)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
 		}
 
 		fmt.Fprintf(w, "{"+
@@ -283,20 +287,20 @@ CREATE TABLE IF NOT EXISTS users(
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, errorStatus, http.StatusBadRequest)
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
 			return
 		}
 
 		var passwordHash string
 		err = db.QueryRow("SELECT PasswordHash FROM users WHERE username = ?", data.Username).Scan(&passwordHash)
 		if err != nil {
-			http.Error(w, errorStatus, http.StatusInternalServerError)
+			http.Error(w, errorStatus("Login Failed"), http.StatusUnauthorized)
 			return
 		}
 
 		hash := fmt.Sprintf("%x", sha1.Sum([]byte(data.Password)))
 		if hash != passwordHash {
-			http.Error(w, errorStatus, http.StatusUnauthorized)
+			http.Error(w, errorStatus("Login Failed"), http.StatusUnauthorized)
 			return
 		}
 
@@ -317,7 +321,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
-			http.Error(w, errorStatus, http.StatusInternalServerError)
+			http.Error(w, errorStatus("Login Failed"), http.StatusInternalServerError)
 			return
 		}
 
@@ -333,7 +337,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, errorStatus, http.StatusBadRequest)
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
 			return
 		}
 
@@ -341,7 +345,8 @@ CREATE TABLE IF NOT EXISTS users(
 
 		_, err = db.Exec("INSERT INTO users (Username, Email, PasswordHash) VALUES (?, ?, ?)", data.Username, data.Email, hash)
 		if err != nil {
-			http.Error(w, errorStatus, http.StatusInternalServerError)
+			log.Println(err)
+			http.Error(w, errorStatus("Could Not Register User"), http.StatusInternalServerError)
 			return
 		}
 
@@ -356,6 +361,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
 			return
 		}
 
@@ -371,18 +377,17 @@ CREATE TABLE IF NOT EXISTS users(
 
 		searchResult, _, err := gowiki.Search(title, 1, false)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Search Failed"), http.StatusInternalServerError)
 			return
 		}
 
 		if len(searchResult) == 0 {
-			http.Error(w, "No results found", http.StatusNotFound)
-			return
+			http.Error(w, errorStatus("Search Failed"), http.StatusInternalServerError)
 		}
 
 		page, err := gowiki.GetPage(searchResult[0], -1, false, true)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Search Failed"), http.StatusInternalServerError)
 			return
 		}
 
@@ -390,7 +395,7 @@ CREATE TABLE IF NOT EXISTS users(
 		url := page.URL
 		content, err := page.GetContent()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Search Failed"), http.StatusInternalServerError)
 			return
 		}
 
@@ -406,7 +411,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errorStatus("Search Failed"), http.StatusInternalServerError)
 			return
 		}
 
