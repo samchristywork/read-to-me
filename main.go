@@ -214,7 +214,8 @@ CREATE TABLE IF NOT EXISTS users(
   Username TEXT NOT NULL UNIQUE,
   PasswordHash TEXT NOT NULL,
   Email TEXT NOT NULL UNIQUE,
-  Verified BOOLEAN DEFAULT FALSE
+  Verified BOOLEAN DEFAULT FALSE,
+  VerificationCode TEXT NOT NULL
 );`)
 	if err != nil {
 		fmt.Println(err)
@@ -473,7 +474,49 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Fprintf(w, string(responseJSON))
+		w.Write(responseJSON)
+	})
+
+	http.HandleFunc("/verify", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Key      string `json:"key"`
+			Username string `json:"username"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
+		}
+
+		username := data.Username
+		key := data.Key
+
+		var code string
+		err = db.QueryRow("SELECT VerificationCode FROM users WHERE Username = ?", username).Scan(&code)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Verify User"), http.StatusInternalServerError)
+			return
+		}
+
+		if key != code {
+			http.Error(w, errorStatus("Could Not Verify User"), http.StatusUnauthorized)
+			return
+		}
+
+		_, err = db.Exec("UPDATE users SET Verified = TRUE WHERE Username = ?", username)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Verify User"), http.StatusInternalServerError)
+			return
+		}
+
+		_, err = db.Exec("UPDATE users SET Credits = 10000 WHERE Username = ?", username)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Verify User"), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "{\"status\": \"ok\"}")
 	})
 
 	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))
