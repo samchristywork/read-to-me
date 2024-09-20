@@ -11,12 +11,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/trietmn/go-wiki"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
-var errorStatus = "{\"status\": \"error\"}";
+
+type Session struct {
+	Username string
+	Expiry   int64
+}
+
+var sessionMap = make(map[string]Session)
 
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
@@ -155,11 +163,18 @@ CREATE TABLE IF NOT EXISTS users(
 		var data struct {
 			Sha   string `json:"sha"`
 			Title string `json:"title"`
+			Token string `json:"token"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
+		}
+
+		session, ok := sessionMap[data.Token]
+		if !ok || session.Expiry < time.Now().Unix() {
+			http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
 			return
 		}
 
@@ -175,6 +190,7 @@ CREATE TABLE IF NOT EXISTS users(
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Username string `json:"username"`
+			Token string `json:"token"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -183,7 +199,11 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Println("Received user:", data.Username)
+		session, ok := sessionMap[data.Token]
+		if !ok || session.Expiry < time.Now().Unix() {
+			http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
+			return
+		}
 
 		rows, err := db.Query("SELECT title FROM posts WHERE username = ?", data.Username)
 		if err != nil {
@@ -216,6 +236,7 @@ CREATE TABLE IF NOT EXISTS users(
 	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Text string `json:"text"`
+			Token string `json:"token"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -282,9 +303,16 @@ CREATE TABLE IF NOT EXISTS users(
 		response := struct {
 			Status   string `json:"status"`
 			Username string `json:"username"`
+			Token    string `json:"token"`
 		}{
 			Status:   "ok",
 			Username: data.Username,
+			Token:    fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprintf("%d", rand.Int63())))),
+		}
+
+		sessionMap[response.Token] = Session{
+			Username: data.Username,
+			Expiry:   time.Now().Unix() + 3600,
 		}
 
 		responseJSON, err := json.Marshal(response)
@@ -323,11 +351,17 @@ CREATE TABLE IF NOT EXISTS users(
 	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Title string `json:"title"`
+			Token string `json:"token"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		session, ok := sessionMap[data.Token]
+		if !ok || session.Expiry < time.Now().Unix() {
+			http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
 			return
 		}
 
