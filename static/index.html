@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Home</title>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <style>
+body {
+  display: block;
+}
+
+.odd {
+  background-color: #007BFF;
+}
+
+section {
+  height: 70rem;
+}
+  </style>
+</head>
+
+<body>
+  <section class="even">
+    <div style="display: flex; width: 100%; justify-content: center; height: 100vh">
+      <div class="container">
+        <div id="profile">Not Logged In</div>
+        <div><a href="/create.html">Create</a></div>
+        <div><a href="/login.html">Login</a></div>
+        <div><a href="/signup.html">Sign Up</a></div>
+        <div><a href="/user.html">User</a></div>
+        <div><a href="/profile.html">Profile</a></div>
+        <div><a href="/logout.html">Log Out</a></div>
+      </div>
+    </div>
+  </section>
+  <section class="odd">
+  </section>
+  <section class="even">
+  </section>
+  <section class="odd">
+  </section>
+  <section class="even">
+  </section>
+  <section class="odd">
+  </section>
+</body>
+<script>
+function getCookie(cname) {
+  let name = cname + "=";
+  let ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
+let username=getCookie("username");
+if (username) {
+  document.querySelector("#profile").innerText="Hello, " + username;
+}
+</script>
+</html>
