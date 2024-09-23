@@ -256,7 +256,58 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		_, err = fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	http.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Token string `json:"token"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
+		}
+
+		session, ok := sessionMap[data.Token]
+		if !ok || session.Expiry < time.Now().Unix() {
+			http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
+			return
+		}
+
+		var credits int
+		err = db.QueryRow("SELECT Credits FROM users WHERE Username = ?", session.Username).Scan(&credits)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Get Profile"), http.StatusInternalServerError)
+			return
+		}
+
+		response := struct {
+			Status   string `json:"status"`
+			Username string `json:"username"`
+			Credits  int    `json:"credits"`
+		}{
+			Status:   "ok",
+			Username: session.Username,
+			Credits:  credits,
+		}
+
+		responseJSON, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Get Profile"), http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write(responseJSON)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
