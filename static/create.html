@@ -19,11 +19,11 @@ body {
     <input type="text" id="title" name="title" placeholder="Title"><br>
     <input type="text" id="source" name="source" placeholder="Source"><br>
     <textarea id="text" name="text" rows="30" cols="120"></textarea> <br>
-    <button id="synthesize" onclick='synthesizeAudio()'>Synthesize</button>
-    <button id="removeCitations" onclick='removeCitations()'>Remove Wiki-style Citations</button>
+    <input type="submit" id="synthesize" onclick='synthesizeAudio()' value="Synthesize"></input>
+    <input type="submit" id="removeCitations" onclick='removeCitations()' value="Remove Wiki-style Citations"></input>
     <input type="text" id="wikipedia" name="wikipedia" placeholder="Wikipedia"><br>
-    <button id="searchWiki" onclick='searchWiki()'>Search Wikipedia</button>
-    <button id="post" onclick='post()'>Post</button>
+    <input type="submit" id="searchWiki" onclick='searchWiki()' value="Search Wikipedia"></input>
+    <input type="submit" id="post" onclick='post()' value="Post"></input>
   </div>
   <hr>
   <div id="display">
@@ -34,13 +34,13 @@ body {
   </div>
   <hr>
   <div id="controls">
-    <button id="playpause" onclick='playPauseAudio()'>Pause</button>
-    <button id="restart" onclick='restartAudio()'>Restart</button>
+    <input type="submit" id="playpause" onclick='playPauseAudio()' value="Pause"></input>
+    <input type="submit" id="restart" onclick='restartAudio()' value="Restart"></input>
     <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
     <span id="speedValue">1.0</span>
     <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
-    <button id="prev" onclick='prevAudio()'>Prev</button>
-    <button id="next" onclick='nextAudio()'>Next</button>
+    <input type="submit" id="prev" onclick='prevAudio()' value="Prev"></input>
+    <input type="submit" id="next" onclick='nextAudio()' value="Next"></input>
   </div>
 </body>
 <script>
