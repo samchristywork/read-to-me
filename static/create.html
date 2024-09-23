@@ -199,6 +199,10 @@ body {
       return response.json();
     }).then(function(data) {
       console.log(data);
+      if (data.status != "ok") {
+        return;
+      }
+
       shas = data['shas'];
       sessionID = data['sessionID'];
       currentIndex = 0;
