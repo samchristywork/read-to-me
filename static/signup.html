@@ -48,7 +48,11 @@ function signup() {
   }).then(function(response) {
     return response.json();
   }).then(function(data) {
-    console.log(data);
+    if (data.status != "ok") {
+      document.querySelector("#error").innerText=data.error;
+    } else {
+      window.location="/accountcreated.html"
+    }
   });
 }
 

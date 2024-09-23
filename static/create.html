@@ -51,6 +51,23 @@ body {
   var currentSpeed = 1.0;
   var sessionID = null;
 
+  function getCookie(cname) {
+    let name = cname + "=";
+    let ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  let token=getCookie("token")
+
   function searchWiki() {
     var wikipedia = document.getElementById('wikipedia').value;
     console.log(wikipedia);
@@ -59,7 +76,10 @@ body {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({title: wikipedia})
+      body: JSON.stringify({
+        title: wikipedia,
+        token: token,
+      })
     }).then(function(response) {
       return response.json();
     }).then(function(data) {
@@ -171,7 +191,10 @@ body {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({text: text})
+      body: JSON.stringify({
+        text: text,
+        token: token,
+      })
     }).then(function(response) {
       return response.json();
     }).then(function(data) {
@@ -217,6 +240,7 @@ body {
       body: JSON.stringify({
         sha: sessionID,
         title: document.getElementById('title').value,
+        token: token,
       })
     }).then(function(response) {
       return response.json();
