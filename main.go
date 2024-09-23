@@ -78,14 +78,22 @@ func tts(inputText string, shaSum string) error {
 		return err
 	}
 	defer textFile.Close()
-	textFile.Write([]byte(inputText))
+
+	_, err = textFile.Write([]byte(inputText))
+	if err != nil {
+		return err
+	}
 
 	outFile, err := os.Create(outputFilename)
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
-	outFile.Write(resp.AudioContent)
+
+	_, err = outFile.Write(resp.AudioContent)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -215,7 +223,8 @@ CREATE TABLE IF NOT EXISTS users(
   PasswordHash TEXT NOT NULL,
   Email TEXT NOT NULL UNIQUE,
   Verified BOOLEAN DEFAULT FALSE,
-  VerificationCode TEXT NOT NULL
+  VerificationCode TEXT NOT NULL,
+  Credits INTEGER DEFAULT 0
 );`)
 	if err != nil {
 		fmt.Println(err)
@@ -253,7 +262,7 @@ CREATE TABLE IF NOT EXISTS users(
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Username string `json:"username"`
-			Token string `json:"token"`
+			Token    string `json:"token"`
 		}
 
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -293,12 +302,16 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Fprintf(w, string(titlesJSON))
+		_, err = fmt.Fprintf(w, string(titlesJSON))
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
-			Text string `json:"text"`
+			Text  string `json:"text"`
 			Token string `json:"token"`
 		}
 
@@ -384,7 +397,11 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Fprintf(w, string(responseJSON))
+		_, err = fmt.Fprintf(w, string(responseJSON))
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
@@ -402,14 +419,29 @@ CREATE TABLE IF NOT EXISTS users(
 
 		hash := fmt.Sprintf("%x", sha1.Sum([]byte(data.Password)))
 
-		_, err = db.Exec("INSERT INTO users (Username, Email, PasswordHash) VALUES (?, ?, ?)", data.Username, data.Email, hash)
+		code := fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprintf("%d", rand.Int63()))))
+
+		_, err = db.Exec(`INSERT INTO users
+		(Username, Email, PasswordHash, VerificationCode)
+		VALUES (?, ?, ?, ?)`, data.Username, data.Email, hash, code)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, errorStatus("Could Not Register User"), http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		err = sendRegistrationEmail(data.Username, data.Email, code)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, errorStatus("Could Not Register User"), http.StatusInternalServerError)
+			return
+		}
+
+		_, err = fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
@@ -474,7 +506,11 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		w.Write(responseJSON)
+		_, err = w.Write(responseJSON)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.HandleFunc("/verify", func(w http.ResponseWriter, r *http.Request) {
@@ -516,7 +552,11 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		_, err = fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))
@@ -524,5 +564,8 @@ CREATE TABLE IF NOT EXISTS users(
 	http.Handle("/", http.FileServer(http.Dir("static")))
 
 	fmt.Println("Listening on port 8080")
-	http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
