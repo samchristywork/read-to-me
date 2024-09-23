@@ -1,31 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+  <title>Login</title>
 
-    <meta charset="utf-8" />
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style type="text/css">
-    </style>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <style>
+input[type="submit"] {
+  width: 100%;
+}
+  </style>
 </head>
 
 <body>
-  <h1>Login</h1>
-  <label for="username">Username:</label>
-  <input type="text" name="username" id="username" required>
-  <br>
-  <label for="password">Password:</label>
-  <input type="password" name="password" id="password" required>
-  <br>
-  <input type="submit" value="Login" onclick="login()">
+  <div class="container">
+    <h1>Login</h1>
+
+    <div id="error" class="error"></div>
+
+    <label for="username">Username:</label>
+    <input type="text" name="username" id="username" required>
+
+    <label for="password">Password:</label>
+    <input type="password" name="password" id="password" required>
+
+    <input type="submit" value="Login" onclick="login()">
+    <p>Don't have an account? <a href="/signup.html">Sign Up</a></p>
+  </div>
 </body>
 <script>
 function setCookie(cname, cvalue, exdays) {
   const d = new Date();
   d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
   let expires = "expires="+d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";SameSite=strict;" + expires + ";path=/";
+  document.cookie = cname + "=" + cvalue + ";SameSite=strict; Secure; " + expires + ";path=/";
 }
 
 function login() {
@@ -43,8 +53,11 @@ function login() {
   }).then(function(data) {
     if(data.status=="ok") {
       setCookie("username", data.username, 30);
+      setCookie("token", data.token, 30);
+      window.location.href="/";
     } else {
       setCookie("username", "", 30);
+      document.querySelector(".error").innerText="Login Failed";
     }
   });
 }
