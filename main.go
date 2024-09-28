@@ -360,6 +360,61 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
+	http.HandleFunc("/play", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Session string `json:"session"`
+			Token   string `json:"token"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
+		}
+
+		textFilename := fmt.Sprintf("data/session-%s.txt", data.Session)
+
+		text, err := os.ReadFile(textFilename)
+		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+		}
+
+		fragments := splitText(string(text))
+
+		for i := 0; i < len(fragments); i++ {
+			if len(fragments[i]) == 0 {
+				fragments = append(fragments[:i], fragments[i+1:]...)
+				i--
+			}
+		}
+
+		shas := make([]string, len(fragments))
+		shaChan := make(chan string)
+
+		for n, fragment := range fragments {
+			go func(fragment string, n int) {
+				sha1 := fmt.Sprintf("%x", sha1.Sum([]byte(fragment)))
+				shas[n] = fmt.Sprintf("\"%s\"", sha1)
+				shaChan <- sha1
+			}(fragment, n)
+		}
+
+		for i := 0; i < len(fragments); i++ {
+			select {
+			case sha := <-shaChan:
+				fmt.Println("Processed", sha)
+			}
+		}
+
+		_, err = fmt.Fprintf(w, "{"+
+			"\"status\": \"ok\","+
+			"\"shas\": ["+strings.Join(shas, ", ")+"]}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
+	})
+
 	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Text  string `json:"text"`
