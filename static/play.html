@@ -17,5 +17,36 @@ body {
 <body>
 </body>
 <script>
+  function getCookie(cname) {
+    let name = cname + "=";
+    let ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  let token=getCookie("token")
+
+  fetch('/play', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      session: "SESSION SHA GOES HERE",
+      token: token,
+    })
+  }).then(function(response) {
+    return response.json();
+  }).then(function(data) {
+    console.log(data);
+  });
 </script>
 </html>
