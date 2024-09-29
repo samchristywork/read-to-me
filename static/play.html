@@ -9,66 +9,66 @@
   <link rel="stylesheet" type="text/css" href="style.css" />
   <script src="play.js"></script>
   <style>
-body {
-  display: block;
- }
-
-.center-fixed-box {
+.fixed-box {
   position: fixed;
+  transform: translate(-50%, -50%);
+  border: 1px solid #000;
+  border-radius: 1rem;
+  background-color: #eee;
+  overflow: auto;
+}
+
+.center {
   top: 50%;
   left: 50%;
   width: 60rem;
   height: 30rem;
-  transform: translate(-50%, -50%);
-  overflow: auto;
-  border: 1px solid #000;
-  border-radius: 1rem;
-  background-color: #eee;
 }
 
-.scrollable-content {
-  height: 100%;
-  margin: 1rem;
-}
-
-.section-fixed-box {
-  position: fixed;
+.section-list {
   top: 50%;
   left: calc(50% + 41rem);
   width: 20rem;
   height: 30rem;
-  transform: translate(-50%, -50%);
-  overflow: auto;
-  border: 1px solid #000;
-  border-radius: 1rem;
-  background-color: #eee;
+}
+
+.controls {
+  top: calc(50% + 18rem);
+  left: 50%;
+  width: 60rem;
+  height: 3rem;
 }
 
 .scrollable-sections {
   height: 100%;
   margin: 1rem;
+  font-size: 0.8rem;
 }
 
-.controls-fixed-box {
-  position: fixed;
-  top: calc(50% + 18rem);
-  left: 50%;
-  width: 60rem;
-  height: 3rem;
-  transform: translate(-50%, -50%);
-  border: 1px solid #000;
-  border-radius: 1rem;
-  background-color: #eee;
+.scrollable-content {
+  height: 100%;
+  margin: 1rem;
+  font-size: 1.3rem;
+}
+
+.scrollable-sections div {
+  white-space: nowrap;
+  overflow: hidden;
+  border: 1px solid black;
+}
+
+.scrollable-sections div:hover {
+  background-color: red;
 }
   </style>
 </head>
 
 <body>
-  <div class="center-fixed-box">
+  <div class="center fixed-box">
     <div class="scrollable-content" id="scrollable"></div>
   </div>
 
-  <div id="controls" class="controls-fixed-box">
+  <div id="controls" class="controls fixed-box">
     <input type="submit" id="playpause" onclick='playPauseAudio()' value="Pause"></input>
     <input type="submit" id="restart" onclick='restartAudio()' value="Restart"></input>
     <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
@@ -76,13 +76,12 @@ body {
     <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
     <input type="submit" id="prev" onclick='prevAudio()' value="Prev"></input>
     <input type="submit" id="next" onclick='nextAudio()' value="Next"></input>
-    <div id="viewport">View</div>
     <span id="durationPlayed">DurationPlayed</span>
     <span id="totalDuration">Total Duration</span>
     <span id="progress">0/0</span>
   </div>
 
-  <div class="section-fixed-box">
+  <div class="section-list fixed-box">
     <div class="scrollable-sections" id="sections"></div>
   </div>
 </body>
