@@ -7,46 +7,38 @@
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" type="text/css" href="style.css" />
+  <script src="play.js"></script>
   <style>
 body {
   display: block;
+}
+
+.controls-fixed-box {
 }
   </style>
 </head>
 
 <body>
+  <div class="center-fixed-box">
+    <div class="scrollable-content" id="scrollable"></div>
+  </div>
+
+  <div id="controls" class="controls-fixed-box">
+    <input type="submit" id="playpause" onclick='playPauseAudio()' value="Pause"></input>
+    <input type="submit" id="restart" onclick='restartAudio()' value="Restart"></input>
+    <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
+    <span id="speedValue">1.0</span>
+    <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
+    <input type="submit" id="prev" onclick='prevAudio()' value="Prev"></input>
+    <input type="submit" id="next" onclick='nextAudio()' value="Next"></input>
+    <div id="viewport">View</div>
+    <span id="durationPlayed">DurationPlayed</span>
+    <span id="totalDuration">Total Duration</span>
+    <span id="progress">0/0</span>
+  </div>
+
+  <div class="section-fixed-box">
+    <div class="scrollable-sections" id="sections"></div>
+  </div>
 </body>
-<script>
-  function getCookie(cname) {
-    let name = cname + "=";
-    let ca = document.cookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return "";
-  }
-
-  let token=getCookie("token")
-
-  fetch('/play', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      session: "SESSION SHA GOES HERE",
-      token: token,
-    })
-  }).then(function(response) {
-    return response.json();
-  }).then(function(data) {
-    console.log(data);
-  });
-</script>
 </html>
