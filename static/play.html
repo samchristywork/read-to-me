@@ -9,34 +9,34 @@
   <link rel="stylesheet" type="text/css" href="style.css" />
   <script src="play.js"></script>
   <style>
-.fixed-box {
-  position: fixed;
-  transform: translate(-50%, -50%);
-  border: 1px solid #000;
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 40rem 20rem 1fr;
+  gap: 1rem;
+  margin: 1rem;
+}
+
+.main {
+  height: 80vh;
+  border: 1px solid black;
   border-radius: 1rem;
-  background-color: #eee;
   overflow: auto;
 }
 
-.center {
-  top: 50%;
-  left: 50%;
-  width: 60rem;
-  height: 30rem;
-}
-
 .section-list {
-  top: 50%;
-  left: calc(50% + 41rem);
-  width: 20rem;
-  height: 30rem;
+  height: 80vh;
+  border: 1px solid black;
+  border-radius: 1rem;
+  overflow: auto;
 }
 
 .controls {
-  top: calc(50% + 18rem);
-  left: 50%;
-  width: 60rem;
-  height: 3rem;
+  width: 40rem;
+  height: 2rem;
+  border: 1px solid black;
+  border-radius: 1rem;
+  overflow: auto;
+  margin: 0 auto;
 }
 
 .scrollable-sections {
@@ -64,11 +64,21 @@
 </head>
 
 <body>
-  <div class="center fixed-box">
-    <div class="scrollable-content" id="scrollable"></div>
+  <div class="layout">
+    <div></div>
+
+    <div class="main">
+      <div class="scrollable-content" id="scrollable"></div>
+    </div>
+
+    <div class="section-list">
+      <div class="scrollable-sections" id="sections"></div>
+    </div>
+
+    <div></div>
   </div>
 
-  <div id="controls" class="controls fixed-box">
+  <div id="controls" class="controls">
     <input type="submit" id="playpause" onclick='playPauseAudio()' value="Pause"></input>
     <input type="submit" id="restart" onclick='restartAudio()' value="Restart"></input>
     <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
@@ -79,10 +89,6 @@
     <span id="durationPlayed">DurationPlayed</span>
     <span id="totalDuration">Total Duration</span>
     <span id="progress">0/0</span>
-  </div>
-
-  <div class="section-list fixed-box">
-    <div class="scrollable-sections" id="sections"></div>
   </div>
 </body>
 </html>
