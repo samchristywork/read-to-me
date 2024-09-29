@@ -11,9 +11,54 @@
   <style>
 body {
   display: block;
+ }
+
+.center-fixed-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 60rem;
+  height: 30rem;
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  border: 1px solid #000;
+  border-radius: 1rem;
+  background-color: #eee;
+}
+
+.scrollable-content {
+  height: 100%;
+  margin: 1rem;
+}
+
+.section-fixed-box {
+  position: fixed;
+  top: 50%;
+  left: calc(50% + 41rem);
+  width: 20rem;
+  height: 30rem;
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  border: 1px solid #000;
+  border-radius: 1rem;
+  background-color: #eee;
+}
+
+.scrollable-sections {
+  height: 100%;
+  margin: 1rem;
 }
 
 .controls-fixed-box {
+  position: fixed;
+  top: calc(50% + 18rem);
+  left: 50%;
+  width: 60rem;
+  height: 3rem;
+  transform: translate(-50%, -50%);
+  border: 1px solid #000;
+  border-radius: 1rem;
+  background-color: #eee;
 }
   </style>
 </head>
