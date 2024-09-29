@@ -423,7 +423,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
 			return
 		}
 
@@ -436,7 +436,12 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 		defer sessionFile.Close()
-		sessionFile.Write([]byte(data.Text))
+
+		_, err = sessionFile.Write([]byte(data.Text))
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
+			return
+		}
 
 		fragments := splitText(data.Text)
 
