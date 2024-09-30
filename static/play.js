@@ -20,6 +20,35 @@ function getCookie(cname) {
   return "";
 }
 
+function playPauseAudio() {
+  if (currentAudio) {
+    if (currentAudio.paused) {
+      currentAudio.play();
+      document.getElementById('playpause').innerText = "Pause";
+    } else {
+      currentAudio.pause();
+      document.getElementById('playpause').innerText = "Play";
+    }
+  }
+}
+
+function restartAudio() {
+  currentIndex = 0;
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.remove();
+  }
+  playAudioSequence();
+}
+
+function setAudioSpeed(speed) {
+  document.getElementById('speedValue').innerText = speed;
+  currentSpeed = speed;
+  if (currentAudio) {
+    currentAudio.playbackRate = speed;
+  }
+}
+
 function playAudioSequence() {
   console.log("Playing audio");
 
@@ -101,7 +130,7 @@ fetch('/play', {
       duration += audio.duration;
       if (loaded == audios.length) {
         document.getElementById('totalDuration').innerText = formatDuration(duration);
-        //playAudioSequence();
+        playAudioSequence();
       }
     };
   });
