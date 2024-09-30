@@ -457,9 +457,14 @@ CREATE TABLE IF NOT EXISTS users(
 			http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
 		}
 
-		fmt.Fprintf(w, "{"+
+		_, err = fmt.Fprintf(w, "{"+
+			"\"status\": \"ok\","+
 			"\"shas\": ["+strings.Join(shas, ", ")+"],"+
 			"\"sessionID\": \""+sessionID+"\"}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
