@@ -1,5 +1,9 @@
 var texts = [];
+var shas = [];
 var audios = [];
+var currentIndex = 0;
+var currentAudio = null;
+var currentSpeed = 1.0;
 
 function getCookie(cname) {
   let name = cname + "=";
@@ -14,6 +18,25 @@ function getCookie(cname) {
     }
   }
   return "";
+}
+
+function playAudioSequence() {
+  console.log("Playing audio");
+
+  var audio = audios[currentIndex];
+  audio.currentTime = 0;
+  audio.play();
+  audio.playbackRate = currentSpeed;
+  currentAudio = audio;
+  console.log("Playing audio of duration " + audio.duration + " seconds");
+
+  audio.onended = function() {
+    audio.remove();
+    currentIndex++;
+    if (currentIndex < shas.length) {
+      playAudioSequence();
+    }
+  };
 }
 
 function formatDuration(duration) {
