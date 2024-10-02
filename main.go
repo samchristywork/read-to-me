@@ -719,7 +719,29 @@ CREATE TABLE IF NOT EXISTS users(
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		filePath := filepath.Join("static", r.URL.Path)
 
-	http.Handle("/", http.FileServer(http.Dir("static")))
+		if strings.HasSuffix(filePath, ".html") {
+			content, err := ioutil.ReadFile(filePath)
+			if err != nil {
+				http.Error(w, "File not found.", http.StatusNotFound)
+				return
+			}
+
+			strContent := string(content)
+			modifiedContent, err := replaceIncludes(strContent)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+
+			_, err = w.Write([]byte(modifiedContent))
+			if err != nil {
+				http.Error(w, "Error writing response.", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			http.ServeFile(w, r, filePath)
+		}
+	})
 
 	fmt.Println("Listening on port 8080")
 	err = http.ListenAndServe(":8080", middleware(mux))
