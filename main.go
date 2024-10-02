@@ -14,9 +14,12 @@ import (
 	"math/rand"
 	"net/http"
 	"net/smtp"
+	"regexp"
 	"os"
 	"strings"
+	"io/ioutil"
 	"time"
+	"path/filepath"
 )
 
 
@@ -26,6 +29,37 @@ type Session struct {
 }
 
 var sessionMap = make(map[string]Session)
+
+func replaceIncludes(strContent string) (string, error) {
+	re := regexp.MustCompile(`{{include\s+"([^"]+)"}}`)
+
+	replacer := func(match string) string {
+		groups := re.FindStringSubmatch(match)
+		if len(groups) < 2 {
+			return match
+		}
+
+		filename := groups[1]
+		filePath := filepath.Join("static", filename)
+
+		fileContent, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return ""
+		}
+
+		return string(fileContent)
+	}
+
+	modifiedContent := re.ReplaceAllStringFunc(strContent, replacer)
+	return modifiedContent, nil
+}
+
+func middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.URL);
+		next.ServeHTTP(w, r)
+	})
+}
 
 func errorStatus(message string) string {
 	return fmt.Sprintf("{\"status\": \"error\", \"error\": \"%s\"}", message)
