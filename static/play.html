@@ -18,25 +18,30 @@
 }
 
 .main {
-  height: 80vh;
+  height: 75vh;
   border: 1px solid black;
   border-radius: 1rem;
   overflow: auto;
+  background-color: #f1f1f1;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .section-list {
-  height: 80vh;
+  height: 75vh;
   border: 1px solid black;
   border-radius: 1rem;
   overflow: auto;
+  background-color: #f1f1f1;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .controls {
   width: 40rem;
-  height: 2rem;
+  height: 7rem;
   border: 1px solid black;
   border-radius: 1rem;
-  overflow: auto;
   margin: 0 auto;
 }
 
@@ -61,6 +66,98 @@
 .scrollable-sections div:hover {
   background-color: red;
 }
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f1f1f1;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#playpause, #restart, #prev, #next {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#playpause:hover, #restart:hover, #prev:hover, #next:hover {
+    background-color: #0056b3;
+}
+
+#speed {
+    flex-grow: 1;
+}
+
+#currentIdx {
+    width: 100px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#speedValue, #durationPlayed, #totalDuration, #progress {
+    font-size: 1rem;
+    font-family: Arial, sans-serif;
+}
+
+label {
+    font-weight: bold;
+}
+
+
+
+
+
+
+    /* Basic styling for the cookie banner */
+    #cookie-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        padding: 10px 0;
+        font-family: Arial, sans-serif;
+        z-index: 1000;
+    }
+
+    #cookie-banner a {
+        color: #4CAF50;
+        text-decoration: underline;
+        margin-left: 5px;
+    }
+
+    #cookie-banner button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-left: 10px;
+        font-weight: bold;
+    }
+
+    #cookie-banner button:hover {
+        background-color: #45a049;
+    }
   </style>
 </head>
 
@@ -79,8 +176,9 @@
     <div></div>
   </div>
 
+  <!--
   <div id="controls" class="controls">
-    <input type="submit" id="playpause" onclick='playPauseAudio()' value="Pause"></input>
+    <input type="submit" id="playpause" onclick='playPauseAudio()' value="Play"></input>
     <input type="submit" id="restart" onclick='restartAudio()' value="Restart"></input>
     <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
     <span id="speedValue">1.0</span>
@@ -91,5 +189,47 @@
     <span id="totalDuration">Total Duration</span>
     <span id="progress">0/0</span>
   </div>
+  -->
+<div id="controls" class="controls">
+    <div class="control-group">
+        <input type="submit" id="playpause" onclick='playPauseAudio()' value="Play">
+        <input type="submit" id="restart" onclick='restartAudio()' value="Restart">
+        <input type="submit" id="prev" onclick='prevAudio()' value="Prev">
+        <input type="submit" id="next" onclick='nextAudio()' value="Next">
+    </div>
+
+    <div class="control-group">
+        <label for="speed">Speed: </label>
+        <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
+        <span id="speedValue">1.0</span>
+    </div>
+
+    <div class="control-group">
+        <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
+        <span id="durationPlayed">Duration Played</span>
+        <span id="totalDuration">Total Duration</span>
+        <span id="progress">0/0</span>
+    </div>
+
+<div id="cookie-banner">
+    This website uses cookies to ensure you get the best experience and for authentication purposes.
+    <a href="/privacy-policy" target="_blank">Learn More</a>
+    <button onclick="acceptCookies()">Accept</button>
+</div>
+
+<script>
+    function acceptCookies() {
+        document.cookie = "cookieConsent=true; path=/; max-age=" + 60 * 60 * 24 * 365;
+        document.getElementById('cookie-banner').style.display = 'none';
+    }
+
+    window.onload = function() {
+        if (document.cookie.indexOf("cookieConsent=true") === -1) {
+            document.getElementById('cookie-banner').style.display = 'block';
+        } else {
+            document.getElementById('cookie-banner').style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
