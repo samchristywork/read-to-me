@@ -265,7 +265,9 @@ CREATE TABLE IF NOT EXISTS users(
 		return
 	}
 
-	http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+  mux := http.NewServeMux()
+
+	mux.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Sha   string `json:"sha"`
 			Title string `json:"title"`
@@ -297,7 +299,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Token string `json:"token"`
 		}
@@ -344,7 +346,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Username string `json:"username"`
 			Token    string `json:"token"`
@@ -394,7 +396,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/play", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/play", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Session string `json:"session"`
 			Token   string `json:"token"`
@@ -449,7 +451,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/synthesize", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Text  string `json:"text"`
 			Token string `json:"token"`
@@ -501,7 +503,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -554,7 +556,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -594,7 +596,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/wikipedia", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Title string `json:"title"`
 			Token string `json:"token"`
@@ -663,7 +665,7 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.HandleFunc("/verify", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/verify", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Key      string `json:"key"`
 			Username string `json:"username"`
@@ -709,12 +711,15 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
-	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))
+	mux.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("data"))))
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		filePath := filepath.Join("static", r.URL.Path)
 
 	http.Handle("/", http.FileServer(http.Dir("static")))
 
 	fmt.Println("Listening on port 8080")
-	err = http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", middleware(mux))
 	if err != nil {
 		log.Fatal(err)
 	}
