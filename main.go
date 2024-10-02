@@ -413,6 +413,7 @@ CREATE TABLE IF NOT EXISTS users(
 		text, err := os.ReadFile(textFilename)
 		if err != nil {
 			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
 		}
 
 		fragments := splitText(string(text))
@@ -491,6 +492,7 @@ CREATE TABLE IF NOT EXISTS users(
 		err, shas := processFragments(fragments)
 		if err != nil {
 			http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
+			return
 		}
 
 		_, err = fmt.Fprintf(w, "{"+
@@ -626,6 +628,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 		if len(searchResult) == 0 {
 			http.Error(w, errorStatus("Search Failed"), http.StatusInternalServerError)
+			return
 		}
 
 		page, err := gowiki.GetPage(searchResult[0], -1, false, true)
