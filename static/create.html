@@ -27,29 +27,9 @@ body {
     <input type="submit" id="post" onclick='post()' value="Post"></input>
   </div>
   <hr>
-  <div id="display">
-    <div id="viewport">View</div>
-    <span id="durationPlayed">DurationPlayed</span>
-    <span id="totalDuration">Total Duration</span>
-    <span id="progress">0/0</span>
-  </div>
-  <hr>
-  <div id="controls">
-    <input type="submit" id="playpause" onclick='playPauseAudio()' value="Pause"></input>
-    <input type="submit" id="restart" onclick='restartAudio()' value="Restart"></input>
-    <input type="range" id="speed" name="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="setAudioSpeed(this.value)">
-    <span id="speedValue">1.0</span>
-    <input type="number" id="currentIdx" name="currentIdx" placeholder="Current Index">
-    <input type="submit" id="prev" onclick='prevAudio()' value="Prev"></input>
-    <input type="submit" id="next" onclick='nextAudio()' value="Next"></input>
-  </div>
 </body>
 <script>
   var shas = [];
-  var audios = [];
-  var currentIndex = 0;
-  var currentAudio = null;
-  var currentSpeed = 1.0;
   var sessionID = null;
 
   let token=getCookie("token")
@@ -81,96 +61,7 @@ body {
     });
   }
 
-  function nextAudio() {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.remove();
-    }
-    currentIndex++;
-    if (currentIndex < shas.length) {
-      playAudioSequence();
-    }
-  }
-
-  function prevAudio() {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.remove();
-    }
-    currentIndex--;
-    if (currentIndex >= 0) {
-      playAudioSequence();
-    }
-  }
-
-  function playPauseAudio() {
-    if (currentAudio) {
-      if (currentAudio.paused) {
-        currentAudio.play();
-        document.getElementById('playpause').innerText = "Pause";
-      } else {
-        currentAudio.pause();
-        document.getElementById('playpause').innerText = "Play";
-      }
-    }
-  }
-
-  function restartAudio() {
-    currentIndex = 0;
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.remove();
-    }
-    playAudioSequence();
-  }
-
-  function setAudioSpeed(speed) {
-    document.getElementById('speedValue').innerText = speed;
-    currentSpeed = speed;
-    if (currentAudio) {
-      currentAudio.playbackRate = speed;
-    }
-  }
-
-  function playAudioSequence() {
-    var text = "data/text-"+shas[currentIndex]+".txt";
-    fetch(text).then(function(response) {
-      return response.text();
-    }).then(function(data) {
-      document.getElementById('viewport').innerText = data;
-    });
-
-    document.getElementById('progress').innerText = (currentIndex+1) + "/" + shas.length;
-    var audio = audios[currentIndex];
-    audio.currentTime = 0;
-    audio.play();
-    audio.playbackRate = currentSpeed;
-    currentAudio = audio;
-    audio.onloadedmetadata = function() {
-      console.log("Playing audio of duration " + audio.duration + " seconds");
-    };
-
-    audio.onended = function() {
-      audio.remove();
-      currentIndex++;
-      if (currentIndex < shas.length) {
-        playAudioSequence();
-      }
-    };
-  }
-
-  function formatDuration(duration) {
-    var minutes = Math.floor(duration / 60);
-    var seconds = Math.floor(duration % 60);
-    return minutes + "m " + seconds + "s";
-  }
-
   function synthesizeAudio() {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.remove();
-    }
-
     var text = document.getElementById('text').value;
     fetch('/synthesize', {
       method: 'POST',
@@ -184,29 +75,11 @@ body {
     }).then(function(response) {
       return response.json();
     }).then(function(data) {
-      console.log(data);
       if (data.status != "ok") {
         return;
       }
-
-      shas = data['shas'];
-      sessionID = data['sessionID'];
-      currentIndex = 0;
-
-      audios = shas.map(sha => new Audio("data/output-"+sha+".mp3"));
-
-      var loaded = 0;
-      var duration = 0;
-      audios.forEach(audio => {
-        audio.onloadeddata = function() {
-          loaded++;
-          duration += audio.duration;
-          if (loaded == audios.length) {
-            document.getElementById('totalDuration').innerText = formatDuration(duration);
-            playAudioSequence();
-          }
-        };
-      });
+      //console.log(data);
+      window.location="/play.html?s="+data.sessionID;
     });
   }
 
@@ -238,23 +111,6 @@ body {
       console.log(data);
     });
   }
-
-  setInterval(() => {
-    if (currentAudio) {
-      var progress = currentAudio.currentTime / currentAudio.duration;
-
-      var viewport = document.getElementById('viewport');
-      var text = viewport.innerText;
-      var textLength = text.length;
-      var progressIdx = Math.floor(progress * textLength);
-      var highlightedText = text.substring(0, progressIdx) + "<span style='background-color: yellow;'>" + text.substring(progressIdx, progressIdx+1) + "</span>" + text.substring(progressIdx+1);
-      viewport.innerHTML = highlightedText;
-
-      var previous = currentIndex > 0 ? audios.slice(0, currentIndex).reduce((acc, audio) => acc + audio.duration, 0) : 0;
-      document.getElementById('durationPlayed').innerText = formatDuration(previous + currentAudio.currentTime);
-    }
-  }, 1000/30);
-
 document.getElementById('text').focus();
 </script>
 </html>
