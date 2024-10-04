@@ -118,46 +118,6 @@
 label {
     font-weight: bold;
 }
-
-
-
-
-
-
-    /* Basic styling for the cookie banner */
-    #cookie-banner {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #333;
-        color: #fff;
-        text-align: center;
-        padding: 10px 0;
-        font-family: Arial, sans-serif;
-        z-index: 1000;
-    }
-
-    #cookie-banner a {
-        color: #4CAF50;
-        text-decoration: underline;
-        margin-left: 5px;
-    }
-
-    #cookie-banner button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        cursor: pointer;
-        border-radius: 5px;
-        margin-left: 10px;
-        font-weight: bold;
-    }
-
-    #cookie-banner button:hover {
-        background-color: #45a049;
-    }
   </style>
 </head>
 
@@ -210,26 +170,5 @@ label {
         <span id="totalDuration">Total Duration</span>
         <span id="progress">0/0</span>
     </div>
-
-<div id="cookie-banner">
-    This website uses cookies to ensure you get the best experience and for authentication purposes.
-    <a href="/privacy-policy" target="_blank">Learn More</a>
-    <button onclick="acceptCookies()">Accept</button>
-</div>
-
-<script>
-    function acceptCookies() {
-        document.cookie = "cookieConsent=true; path=/; max-age=" + 60 * 60 * 24 * 365;
-        document.getElementById('cookie-banner').style.display = 'none';
-    }
-
-    window.onload = function() {
-        if (document.cookie.indexOf("cookieConsent=true") === -1) {
-            document.getElementById('cookie-banner').style.display = 'block';
-        } else {
-            document.getElementById('cookie-banner').style.display = 'none';
-        }
-    }
-</script>
 </body>
 </html>
