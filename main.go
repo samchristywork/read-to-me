@@ -719,7 +719,9 @@ CREATE TABLE IF NOT EXISTS users(
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		filePath := filepath.Join("static", r.URL.Path)
 
-		if strings.HasSuffix(filePath, ".html") {
+		if filePath == "static" {
+			http.Redirect(w, r, "/index.html", http.StatusMovedPermanently)
+		} else if strings.HasSuffix(filePath, ".html") {
 			content, err := ioutil.ReadFile(filePath)
 			if err != nil {
 				http.Error(w, "File not found.", http.StatusNotFound)
