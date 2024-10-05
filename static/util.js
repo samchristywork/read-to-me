@@ -31,4 +31,9 @@ window.onload = function() {
   } else {
     document.getElementById('cookie-banner').style.display = 'none';
   }
+
+  let username=getCookie("username");
+  if (username) {
+    document.querySelector("#profile").innerText="Hello, " + username;
+  }
 }
