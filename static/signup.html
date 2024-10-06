@@ -12,7 +12,7 @@
 input[type="submit"] {
   width: 100%;
 }
-body {
+.main {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -23,22 +23,24 @@ body {
 
 <body>
 {{include "header.html"}}
-  <div class="container">
-    <h1>Sign Up</h1>
+  <div class="main">
+    <div class="container">
+      <h1>Sign Up</h1>
 
-    <div id="error" class="error"></div>
+      <div id="error" class="error"></div>
 
-    <label for="username">Username:</label>
-    <input type="text" name="username" id="username" required>
+      <label for="username">Username:</label>
+      <input type="text" name="username" id="username" required>
 
-    <label for="email">Email:</label>
-    <input type="email" name="email" id="email" required>
+      <label for="email">Email:</label>
+      <input type="email" name="email" id="email" required>
 
-    <label for="password">Password:</label>
-    <input type="password" name="password" id="password" required>
+      <label for="password">Password:</label>
+      <input type="password" name="password" id="password" required>
 
-    <input type="submit" value="Sign Up" onclick="signup()">
-    <p>Already have an account? <a href="/login.html">Log in</a></p>
+      <input type="submit" value="Sign Up" onclick="signup()">
+      <p>Already have an account? <a href="/login.html">Log in</a></p>
+    </div>
   </div>
 </body>
 <script>
