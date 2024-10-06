@@ -35,5 +35,12 @@ window.onload = function() {
   let username=getCookie("username");
   if (username) {
     document.querySelector("#profile").innerText="Hello, " + username;
+
+    document.querySelector("#nav-login").style.display="none";
+    document.querySelector("#nav-signup").style.display="none";
+  } else {
+    document.querySelector("#nav-logout").style.display="none";
+    document.querySelector("#nav-user").style.display="none";
+    document.querySelector("#nav-profile").style.display="none";
   }
 }
