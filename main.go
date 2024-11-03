@@ -185,6 +185,46 @@ func readJSONFile(filename string) (map[string]string, error) {
 	return data, nil
 }
 
+func sendPasswordResetEmail(username string, email string, code string) error {
+	creds, err := readJSONFile("creds.json")
+	if err != nil {
+		return err
+	}
+
+	to := []string{email}
+
+	msg := []byte("To: " + email + "\r\n" +
+		"Subject: Password Reset\r\n" +
+		"MIME-version: 1.0;\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\";\r\n\r\n" +
+		"\r\n" +
+		"<html><body><h1>Reset Password</h1>" +
+		"localhost:8080/change-password.html?u=" + username + "&k=" + code + "'.\r\n" +
+		username + "\r\n" +
+		"</body></html>\r\n",
+	)
+
+	auth := smtp.PlainAuth(
+		"",
+		creds["sender"],
+		creds["password"],
+		"smtp.gmail.com",
+	)
+
+	err = smtp.SendMail(
+		"smtp.gmail.com:587",
+		auth,
+		creds["sender"],
+		to,
+		msg,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func sendRegistrationEmail(username string, email string, code string) error {
 	creds, err := readJSONFile("creds.json")
 	if err != nil {
