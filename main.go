@@ -753,6 +753,41 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
+	mux.HandleFunc("/reset-password", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Email      string `json:"email"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
+		}
+
+		email := data.Email
+
+		var code string
+		var username string
+		err = db.QueryRow("SELECT VerificationCode, Username FROM users WHERE Email = ?", email).Scan(&code, &username)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Get Verification Code"), http.StatusInternalServerError)
+			return
+		}
+
+		err = sendPasswordResetEmail(username, data.Email, code)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, errorStatus("Could Not Send Password Reset"), http.StatusInternalServerError)
+			return
+		}
+
+		_, err = fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		}
+	})
+
 	mux.HandleFunc("/verify", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Key      string `json:"key"`
