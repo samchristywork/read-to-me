@@ -598,6 +598,51 @@ CREATE TABLE IF NOT EXISTS users(
 		}
 	})
 
+	mux.HandleFunc("/change-password", func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			Username string `json:"username"`
+			Key    string `json:"key"`
+			Password string `json:"password"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
+			return
+		}
+
+		username := data.Username
+		key := data.Key
+		hash := fmt.Sprintf("%x", sha1.Sum([]byte(data.Password)))
+
+		fmt.Println(username)
+		fmt.Println(key)
+		res, err := db.Exec("UPDATE users SET PasswordHash = ? WHERE Username = ? AND VerificationCode = ?", hash, username, key)
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Update Password"), http.StatusInternalServerError)
+			return
+		}
+
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Get Number of Rows Affected"), http.StatusInternalServerError)
+			return
+		}
+
+		if rowsAffected == 0 {
+			http.Error(w, errorStatus("Could Not Update Password"), http.StatusInternalServerError)
+			return
+		}
+
+		_, err = fmt.Fprintf(w, "{\"status\": \"ok\"}")
+		if err != nil {
+			http.Error(w, errorStatus("Could Not Generate Reply"), http.StatusInternalServerError)
+			return
+		} else {
+			fmt.Println("Changed Password")
+		}
+	})
+
 	mux.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
 			Username string `json:"username"`
