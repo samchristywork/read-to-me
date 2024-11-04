@@ -29,13 +29,17 @@
     return response.json();
   }).then(function(data) {
     document.getElementById('name').innerHTML = username;
-    console.log(data);
-    data.forEach(function(post) {
-      console.log(post);
-      var div = document.createElement('div');
-      div.innerHTML = post;
-      document.getElementById('posts').appendChild(div);
-    });
+    if (data.status!="ok") {
+      var div = document.querySelector('#name');
+      div.innerHTML = "Invalid User.";
+    } else {
+      data.forEach(function(post) {
+        console.log(post);
+        var div = document.createElement('div');
+        div.innerHTML = post;
+        document.getElementById('posts').appendChild(div);
+        });
+    }
   });
 </script>
 </html>
