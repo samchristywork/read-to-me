@@ -11,13 +11,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: #f0f0f0;
-  background: repeating-linear-gradient(
-    45deg,
-    #f7f7f7,
-    #f7f7f7 4px,
-    #ffffff 1px,
-    #ffffff 20px
-  );
+  background-image: url(background.png);
 }
 
 .container {

@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 )
 
-
 type Session struct {
 	Username string
 	Expiry   int64
