@@ -71,15 +71,38 @@ function setAudioSpeed(speed) {
 function playAudioSequence() {
   console.log('playAudioSequence');
 
-  document.getElementById('scrollable').children[currentIndex].style.color="black";
-  document.getElementById('sections').children[currentIndex].style.color="black";
+  //for (let i=0;i<audios.length;i++) {
+  //  // TODO
+  //  document.getElementById('scrollable').children[i].style.color="grey";
+  //  document.getElementById('scrollable').children[i].style.fontWeight="normal";
+  //  document.getElementById('sections').children[i].style.color="grey";
+  //}
 
+  document.getElementById('scrollable').children[currentIndex].style.color="black";
+  //document.getElementById('scrollable').children[currentIndex].style.fontWeight="bold";
+  document.getElementById('sections').children[currentIndex].style.color="black";
+  for (let child of document.getElementById('sections').children) {
+    console.log(child);
+    child.style.background="";
+  }
+  document.getElementById('sections').children[currentIndex].style.background="yellow";
+  //document.getElementById('scrollable').scrollIntoView();
+  //document.getElementById('sections').scrollIntoView();
+
+  //var text = "data/text-"+shas[currentIndex]+".txt";
+  //fetch(text).then(function(response) {
+  //  return response.text();
+  //}).then(function(data) {
+  //  //document.getElementById('viewport').innerText = data;
+  //});
+
+  //document.getElementById('progress').innerText = (currentIndex+1) + "/" + shas.length;
   var audio = fragments[currentIndex].audio;
   audio.currentTime = 0;
   audio.play();
   audio.playbackRate = currentSpeed;
   currentAudio = audio;
-  console.log("Playing audio of duration " + audio.duration + " seconds");
+  //console.log("Playing audio of duration " + audio.duration + " seconds");
 
   audio.onended = function() {
     audio.remove();

@@ -441,6 +441,8 @@ CREATE TABLE IF NOT EXISTS users(
 			Token   string `json:"token"`
 		}
 
+		// TODO: Should we be using token?
+
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			http.Error(w, errorStatus("Bad Request"), http.StatusBadRequest)
@@ -503,6 +505,26 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
+		//session, ok := sessionMap[data.Token]
+		//if !ok || session.Expiry < time.Now().Unix() {
+		//	http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
+		//	return
+		//}
+
+		//numCredits := len(data.Text)
+		//var availableCredits int
+
+		//err = db.QueryRow("SELECT Credits FROM users WHERE Username = ?", session.Username).Scan(&availableCredits)
+		//if err != nil {
+		//	http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
+		//	return
+		//}
+
+		//if numCredits > availableCredits {
+		//	http.Error(w, errorStatus("Not Enough Credits"), http.StatusInternalServerError)
+		//	return
+		//}
+
 		sessionID := fmt.Sprintf("%x", sha1.Sum([]byte(data.Text)))
 		sessionFilename := fmt.Sprintf("data/session-%s.txt", sessionID)
 
@@ -533,6 +555,14 @@ CREATE TABLE IF NOT EXISTS users(
 			http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
 			return
 		}
+
+		//availableCredits -= numCredits
+
+		//_, err = db.Exec("UPDATE users SET Credits = ? WHERE username = ?", availableCredits, session.Username)
+		//if err != nil {
+		//	http.Error(w, errorStatus("Could Not Synthesize Audio"), http.StatusInternalServerError)
+		//	return
+		//}
 
 		_, err = fmt.Fprintf(w, "{"+
 			"\"status\": \"ok\","+
@@ -694,11 +724,11 @@ CREATE TABLE IF NOT EXISTS users(
 			return
 		}
 
-		session, ok := sessionMap[data.Token]
-		if !ok || session.Expiry < time.Now().Unix() {
-			http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
-			return
-		}
+		//session, ok := sessionMap[data.Token]
+		//if !ok || session.Expiry < time.Now().Unix() {
+		//	http.Error(w, errorStatus("Invalid Token"), http.StatusUnauthorized)
+		//	return
+		//}
 
 		title := data.Title
 
