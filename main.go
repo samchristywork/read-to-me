@@ -19,6 +19,29 @@ func main() {
 	}
 	defer db.Close()
 
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS posts (
+		id INTEGER PRIMARY KEY,
+		title TEXT,
+		source TEXT,
+		content TEXT,
+		author TEXT,
+		timestamp TEXT
+	)`)
+	if err != nil {
+		log.Fatalf("Error creating posts table: %v", err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS audio (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		hash TEXT NOT NULL UNIQUE,
+		text TEXT NOT NULL,
+		audio BLOB,
+		audio_length_ms INTEGER
+	)`)
+	if err != nil {
+		log.Fatalf("Error creating audio table: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
