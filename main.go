@@ -6,10 +6,43 @@ import (
 	"log"
 	"database/sql"
 	"os"
+	"embed"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+//go:embed template/*
+var templateFiles embed.FS
+
 var db *sql.DB
+
+func renderPage(content string) (string, error) {
+	tmpl, err := templateFiles.ReadFile("template/head.html")
+	if err != nil {
+		log.Printf("Error reading head template: %v", err)
+		return "", err
+	}
+	head := string(tmpl)
+
+	tmpl, err = templateFiles.ReadFile("template/nav.html")
+	if err != nil {
+		log.Printf("Error reading nav template: %v", err)
+		return "", err
+	}
+	nav := string(tmpl)
+
+	tmpl, err = templateFiles.ReadFile("template/footer.html")
+	if err != nil {
+		log.Printf("Error reading footer template: %v", err)
+		return "", err
+	}
+	footer := string(tmpl)
+
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+<head>%s</head>
+<body>%s%s%s</body>
+</html>`, head, nav, content, footer), nil
+}
 
 func main() {
 	var err error
