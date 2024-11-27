@@ -44,6 +44,18 @@ func renderPage(content string) (string, error) {
 </html>`, head, nav, content, footer), nil
 }
 
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	page, err := renderPage("<main><h1>Error - Page not found</h1></main>")
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")
@@ -81,7 +93,12 @@ func main() {
 		switch r.URL.Path {
 		default:
 			fs := http.FileServer(http.Dir("./static"))
-			fs.ServeHTTP(w, r)
+			filePath := "./static" + r.URL.Path
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				notFoundHandler(w, r)
+			} else {
+				fs.ServeHTTP(w, r)
+			}
 		}
 	})
 
