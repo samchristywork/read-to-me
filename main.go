@@ -105,6 +105,16 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	contentBuilder.WriteString(`
+	<script>
+		document.querySelectorAll(".post em").forEach((element) => {
+			const timestamp = element.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, { timeZoneName: "short" });
+			element.textContent = element.textContent.split(" at ")[0] + " at " + localDate;
+		});
+	</script>
+	</main>`)
+
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
 		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
