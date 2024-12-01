@@ -4,18 +4,28 @@ import (
 	"net/http"
 	"fmt"
 	"log"
+	"crypto/sha256"
 	"database/sql"
 	"os"
 	"embed"
 	"strings"
+	"encoding/hex"
 	"html/template"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/text/unicode/norm"
 )
 
 //go:embed template/*
 var templateFiles embed.FS
 
 var db *sql.DB
+
+func calculateHash(text string) string {
+	hasher := sha256.New()
+	normalizedText := norm.NFC.String(text)
+	hasher.Write([]byte(normalizedText))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
 
 func post(id, title, url, content, author, timestamp, class string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
