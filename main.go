@@ -136,6 +136,81 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Post ID is required", http.StatusBadRequest)
+		return
+	}
+
+	stmt, err := db.Prepare("SELECT title, source, content, author, timestamp FROM posts WHERE id = ?")
+	if err != nil {
+		log.Printf("Error preparing SQL statement: %v", err)
+		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	var title, source, body, author, timestamp string
+	err = stmt.QueryRow(id).Scan(&title, &source, &body, &author, &timestamp)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Post not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("Error querying post: %v", err)
+		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		return
+	}
+
+	content := ""
+	lines := strings.Split(body, "\n")
+
+	totalLength := 0
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if line == "" {
+			content += "<br>"
+			continue
+		}
+
+		content += "<div>" + template.HTMLEscapeString(line) + "</div>"
+
+		var audioLength int
+		audioHash := calculateHash(line)
+
+		log.Printf("Searching for hash %s, %s", audioHash, line)
+		err := db.QueryRow("SELECT audio_length_ms FROM audio WHERE hash = ?", audioHash).Scan(&audioLength)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				log.Printf("Error querying audio length: %v", err)
+			}
+			log.Printf("Could not get audio length: %v", err)
+			continue
+		}
+
+		content += fmt.Sprintf(`<span class="hidden">%d</span>`, audioLength)
+
+		fmt.Printf("Audio Length: %d %.*s\n", audioLength, 40, line)
+		totalLength += audioLength
+	}
+
+	fmt.Printf("Total length of all lines (in ms): %d\n", totalLength)
+
+	content = `<main>` + string(post(id, title, source, content, author, timestamp, "full")) + `</main>`
+
+	page, err := renderPage(content)
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")
@@ -173,6 +248,8 @@ func main() {
 		switch r.URL.Path {
 		case "/":
 			homeHandler(w, r)
+		case "/post":
+			viewHandler(w, r)
 		default:
 			fs := http.FileServer(http.Dir("./static"))
 			filePath := "./static" + r.URL.Path
