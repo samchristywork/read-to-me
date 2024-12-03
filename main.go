@@ -136,6 +136,20 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func formatTime(ms int) string {
+	seconds := ms / 1000
+	minutes := seconds / 60
+	hours := minutes / 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes%60, seconds%60)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%d:%02d", minutes, seconds%60)
+	} else {
+		return fmt.Sprintf("%d", seconds)
+	}
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
@@ -177,6 +191,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	<input id="autoscroll" name="autoscroll" type=checkbox checked></input>
 	</div>`, id)
 
+	navigation := `<div class="navigation">`
+
 	content := ""
 	lines := strings.Split(body, "\n")
 
@@ -190,6 +206,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		content += "<div>" + template.HTMLEscapeString(line) + "</div>"
+		epsilon := 1
+		navigation += `
+		<div onclick="document.getElementById('audioPlayer').currentTime = ` + fmt.Sprintf("%f", float64(totalLength+epsilon)/1000) + `;">` +
+			`<span style="text-align:right;">` + formatTime(totalLength) + `</span>` +
+			`<span>` + template.HTMLEscapeString(line) + `</span>` +
+			`</div>`
 
 		var audioLength int
 		audioHash := calculateHash(line)
@@ -210,6 +232,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		totalLength += audioLength
 	}
 
+	navigation += "</div>"
+
 	fmt.Printf("Total length of all lines (in ms): %d\n", totalLength)
 
 	script, err := templateFiles.ReadFile("template/script.js")
@@ -218,7 +242,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content = `<main>` + string(post(id, title, source, content, author, timestamp, "full")) + audio + `</main>` + string(script)
+	content = `<main>` + string(post(id, title, source, content, author, timestamp, "full")) + audio + navigation + `</main>` + string(script)
 
 	page, err := renderPage(content)
 	if err != nil {

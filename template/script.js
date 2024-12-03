@@ -4,6 +4,7 @@
     const postBody = document.querySelector('.post-body');
     const textBlocks = postBody.querySelectorAll('div');
     const timingSpans = postBody.querySelectorAll('span.hidden');
+    const navigation = document.querySelectorAll('.navigation div');
     const autoscroll = document.querySelector('#autoscroll')
 
     let blockDurations = [];
@@ -21,6 +22,7 @@
 
         if (currentTime >= accumulatedTime) {
           block.style.color = 'grey';
+          navigation[index].style.color='grey';
         } else {
           block.style.color = 'black';
           if (first == true) {
@@ -28,7 +30,10 @@
               let y = block.offsetTop-70;
               window.scrollTo({top: y, behavior: 'smooth'});
             }
+            navigation[index].style.color='black';
             first = false;
+          } else {
+            navigation[index].style.color='grey';
           }
         }
       });
