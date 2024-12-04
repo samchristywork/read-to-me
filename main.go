@@ -8,12 +8,15 @@ import (
 	"database/sql"
 	"os"
 	"embed"
+	"bytes"
 	"strings"
 	"encoding/hex"
 	"html/template"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/text/unicode/norm"
 )
+
+var dbMutex sync.Mutex
 
 //go:embed template/*
 var templateFiles embed.FS
@@ -35,6 +38,26 @@ func post(id, title, url, content, author, timestamp, class string) template.HTM
 			<div class="post-body">%s</div>
 		</div>
 	`, class, id, title, url, "source", timestamp, author, timestamp, content))
+}
+
+func retrieveTTS(text string) ([]byte, int, error) {
+	audioHash := calculateHash(text)
+	var audioContent []byte
+	var audioLength int
+
+	dbMutex.Lock()
+	err := db.QueryRow("SELECT audio, audio_length_ms FROM audio WHERE hash = ?", audioHash).Scan(&audioContent, &audioLength)
+	dbMutex.Unlock()
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, 0, nil
+		}
+		log.Printf("Error fetching audio cache: %v", err)
+		return nil, 0, err
+	}
+
+	return audioContent, audioLength, nil
 }
 
 func renderPage(content string) (string, error) {
