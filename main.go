@@ -373,6 +373,46 @@ func createPage(title, source, body string) string {
 	)
 }
 
+func createHandler(w http.ResponseWriter, r *http.Request) {
+	keyword := r.FormValue("keyword")
+	source := r.FormValue("source")
+
+	var title, url, content string
+
+	if source == "Wikipedia" {
+		var err error
+		title, url, content, err = fetchWikipediaContent(keyword)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error fetching Wikipedia article", http.StatusInternalServerError)
+			return
+		}
+	} else if source == "Link" {
+		var err error
+		title, url, content, err = fetchLinkContent(keyword)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error fetching Link content", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		title = ""
+		url = ""
+		content = ""
+	}
+
+	pageContent := createPage(title, url, content)
+	page, err := renderPage(pageContent)
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")
@@ -414,6 +454,8 @@ func main() {
 			viewHandler(w, r)
 		case "/audio":
 			audioHandler(w, r)
+		case "/create":
+			createHandler(w, r)
 		default:
 			fs := http.FileServer(http.Dir("./static"))
 			filePath := "./static" + r.URL.Path
