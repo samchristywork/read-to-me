@@ -103,6 +103,10 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func form(action, content string) template.HTML {
+	return template.HTML(fmt.Sprintf(`<form method="post" action="%s">%s</form>`, action, content))
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query("SELECT id, title, source, content, author, timestamp FROM posts")
 	if err != nil {
@@ -330,6 +334,43 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 	fullAudio := bytes.Join(audioBytes, []byte(""))
 
 	http.ServeContent(w, r, "audio.mp3", time.Now(), bytes.NewReader(fullAudio))
+}
+
+func createPage(title, source, body string) string {
+	title = strings.ReplaceAll(title, `"`, "")
+	source = strings.ReplaceAll(source, `"`, "")
+	body = strings.ReplaceAll(body, `"`, "")
+
+	return fmt.Sprintf(`
+		<main>
+			%s
+			<div class="datasources">
+				<div class="datasource">%s</div>
+				<div class="datasource">%s</div>
+			</div>
+		</main>`,
+		string(form("new-post", `
+			<label for="title">Title:</label>
+			<input type="text" id="title" name="title" value="`+title+`" autofocus required><br>
+			<label for="source">Source:</label>
+			<input type="url" id="source" name="source" placeholder="https://example.com" value="`+source+`"><br>
+			<label for="content">Body:</label>
+			<textarea id="content" name="content" cols="80" rows="15" required>`+body+`</textarea><br>
+			<input type="submit" value="Submit"/>
+		`)),
+		string(form("create", `
+			<label for="keyword">Wikipedia:</label>
+			<input type="text" id="keyword" name="keyword" required><br>
+			<input type="hidden" id="source" name="source" value="Wikipedia">
+			<input type="submit" value="Search"/>
+		`)),
+		string(form("create", `
+			<label for="keyword">Link:</label>
+			<input type="text" id="keyword" name="keyword" required><br>
+			<input type="hidden" id="source" name="source" value="Link">
+			<input type="submit" value="Search"/>
+		`)),
+	)
 }
 
 func main() {
