@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"html/template"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/tcolgate/mp3"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -24,6 +25,24 @@ var dbMutex sync.Mutex
 var templateFiles embed.FS
 
 var db *sql.DB
+
+func calculateAudioLength(audioContent []byte) (int, error) {
+	reader := bytes.NewReader(audioContent)
+	decoder := mp3.NewDecoder(reader)
+
+	var frame mp3.Frame
+	var skipped int
+	var totalDuration time.Duration
+
+	for {
+		if err := decoder.Decode(&frame, &skipped); err != nil {
+			break
+		}
+		totalDuration += frame.Duration()
+	}
+
+	return int(totalDuration.Milliseconds()), nil
+}
 
 func calculateHash(text string) string {
 	hasher := sha256.New()
