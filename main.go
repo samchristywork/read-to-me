@@ -500,6 +500,65 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func newPostHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	title := template.HTMLEscapeString(r.FormValue("title"))
+	source := template.HTMLEscapeString(r.FormValue("source"))
+	content := r.FormValue("content")
+	author := template.HTMLEscapeString("Anonymous")
+	timestamp := time.Now().UTC().Format(time.RFC3339)
+
+	lines := strings.Split(content, "\n")
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(lines))
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(text string) {
+			defer wg.Done()
+			_, _, _, _, err := generateTTS(text)
+			if err != nil {
+				log.Printf("Error processing line %s\n: %v", text, err)
+				errChan <- err
+			}
+		}(line)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	var ttsError error
+	for err := range errChan {
+		if err != nil {
+			ttsError = err
+			break
+		}
+	}
+
+	if ttsError != nil {
+		http.Error(w, "Error processing text-to-speech: "+ttsError.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := db.Exec("INSERT INTO posts (title, source, content, author, timestamp) VALUES (?, ?, ?, ?, ?)", title, source, content, author, timestamp)
+	if err != nil {
+		http.Error(w, "Error creating post: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")
@@ -543,6 +602,8 @@ func main() {
 			audioHandler(w, r)
 		case "/create":
 			createHandler(w, r)
+		case "/new-post":
+			newPostHandler(w, r)
 		default:
 			fs := http.FileServer(http.Dir("./static"))
 			filePath := "./static" + r.URL.Path
