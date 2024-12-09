@@ -10,10 +10,13 @@ import (
 	"embed"
 	"bytes"
 	"time"
+	"context"
 	"sync"
 	"strings"
 	"encoding/hex"
 	"html/template"
+	texttospeech "cloud.google.com/go/texttospeech/apiv1"
+	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/tcolgate/mp3"
 	"golang.org/x/text/unicode/norm"
@@ -49,6 +52,71 @@ func calculateHash(text string) string {
 	normalizedText := norm.NFC.String(text)
 	hasher.Write([]byte(normalizedText))
 	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func generateTTS(text string) (string, string, []byte, int, error) {
+	audioHash := calculateHash(text)
+
+	audioContent, audioLength, err := retrieveTTS(text)
+	if err != nil {
+		log.Printf("Error checking existing audio: %v", err)
+		return "", "", nil, 0, err
+	}
+
+	if audioContent != nil {
+		log.Printf("Audio for text already exists, using cached version.")
+		return audioHash, text, audioContent, audioLength, nil
+	}
+
+	ctx := context.Background()
+	client, err := texttospeech.NewClient(ctx)
+	if err != nil {
+		return "", "", nil, 0, err
+	}
+	defer client.Close()
+
+	req := texttospeechpb.SynthesizeSpeechRequest{
+		Input: &texttospeechpb.SynthesisInput{
+			InputSource: &texttospeechpb.SynthesisInput_Text{Text: text},
+		},
+		Voice: &texttospeechpb.VoiceSelectionParams{
+			LanguageCode: "en-US",
+			SsmlGender:   texttospeechpb.SsmlVoiceGender_MALE,
+		},
+		AudioConfig: &texttospeechpb.AudioConfig{
+			AudioEncoding: texttospeechpb.AudioEncoding_MP3,
+		},
+	}
+
+	log.Printf("Synthesizing: %.*s\n", 40, text)
+
+	resp, err := client.SynthesizeSpeech(ctx, &req)
+	if err != nil {
+		_, t, c, l, _ := generateTTS("Text could not be synthesized.")
+		_, err = db.Exec("INSERT INTO audio (hash, text, audio, audio_length_ms) VALUES (?, ?, ?, ?)", audioHash, t, c, l)
+		log.Printf("Error synthesizing text: %v", err)
+		return "", "", nil, 0, err
+	}
+
+	audioContent = resp.AudioContent
+	audioLength, err = calculateAudioLength(audioContent)
+	if err != nil {
+		log.Printf("Error calculating audio length: %v", err)
+		return "", "", nil, 0, err
+	}
+
+	log.Printf("Inserting into audio table: hash=%s, text=%s, audio_length_ms=%d", audioHash, text, audioLength)
+
+	dbMutex.Lock()
+	_, err = db.Exec("INSERT INTO audio (hash, text, audio, audio_length_ms) VALUES (?, ?, ?, ?)", audioHash, text, audioContent, audioLength)
+	dbMutex.Unlock()
+
+	if err != nil {
+		log.Printf("Error saving audio cache: %v", err)
+		return "", "", nil, 0, err
+	}
+
+	return audioHash, text, audioContent, audioLength, nil
 }
 
 func post(id, title, url, content, author, timestamp, class string) template.HTML {
