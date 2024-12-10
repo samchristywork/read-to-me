@@ -423,6 +423,46 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, "audio.mp3", time.Now(), bytes.NewReader(fullAudio))
 }
 
+func editHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Post ID is required", http.StatusBadRequest)
+		return
+	}
+
+	stmt, err := db.Prepare("SELECT title, content, author, source, timestamp FROM posts WHERE id = ?")
+	if err != nil {
+		log.Printf("Error preparing SQL statement: %v", err)
+		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	var title, body, author, source, timestamp string
+	err = stmt.QueryRow(id).Scan(&title, &body, &author, &source, &timestamp)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Post not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("Error querying post: %v", err)
+		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		return
+	}
+
+	content := createPage(title, source, body)
+	page, err := renderPage(content)
+
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
 func createPage(title, source, body string) string {
 	title = strings.ReplaceAll(title, `"`, "")
 	source = strings.ReplaceAll(source, `"`, "")
@@ -600,6 +640,8 @@ func main() {
 			viewHandler(w, r)
 		case "/audio":
 			audioHandler(w, r)
+		case "/edit":
+			editHandler(w, r)
 		case "/create":
 			createHandler(w, r)
 		case "/new-post":
