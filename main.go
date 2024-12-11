@@ -1,20 +1,21 @@
 package main
 
 import (
-	"net/http"
-	"fmt"
-	"log"
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"database/sql"
-	"os"
 	"embed"
-	"bytes"
-	"time"
-	"context"
-	"sync"
-	"strings"
 	"encoding/hex"
+	"fmt"
 	"html/template"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+	"sync"
+	"time"
+
 	texttospeech "cloud.google.com/go/texttospeech/apiv1"
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 	_ "github.com/mattn/go-sqlite3"
@@ -93,7 +94,8 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	resp, err := client.SynthesizeSpeech(ctx, &req)
 	if err != nil {
 		_, t, c, l, _ := generateTTS("Text could not be synthesized.")
-		_, err = db.Exec("INSERT INTO audio (hash, text, audio, audio_length_ms) VALUES (?, ?, ?, ?)", audioHash, t, c, l)
+		_, err = db.Exec(`INSERT INTO audio (hash, text, audio, audio_length_ms)
+			VALUES (?, ?, ?, ?)`, audioHash, t, c, l)
 		log.Printf("Error synthesizing text: %v", err)
 		return "", "", nil, 0, err
 	}
@@ -105,10 +107,12 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 		return "", "", nil, 0, err
 	}
 
-	log.Printf("Inserting into audio table: hash=%s, text=%s, audio_length_ms=%d", audioHash, text, audioLength)
+	log.Printf("Inserting into audio table: hash=%s, text=%s, audio_length_ms=%d",
+		audioHash, text, audioLength)
 
 	dbMutex.Lock()
-	_, err = db.Exec("INSERT INTO audio (hash, text, audio, audio_length_ms) VALUES (?, ?, ?, ?)", audioHash, text, audioContent, audioLength)
+	_, err = db.Exec(`INSERT INTO audio (hash, text, audio, audio_length_ms)
+	VALUES (?, ?, ?, ?)`, audioHash, text, audioContent, audioLength)
 	dbMutex.Unlock()
 
 	if err != nil {
@@ -119,14 +123,14 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	return audioHash, text, audioContent, audioLength, nil
 }
 
-func post(id, title, url, content, author, timestamp, class string) template.HTML {
+func post(id, title, url, content, author, time, class string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 		<div class="post %s">
 			<h3><a href="/post?id=%s">%s</a> - <a href="%s">%s</a></h3>
 			<em data-timestamp="%s">%s at %s</em>
 			<div class="post-body">%s</div>
 		</div>
-	`, class, id, title, url, "source", timestamp, author, timestamp, content))
+	`, class, id, title, url, "source", time, author, time, content))
 }
 
 func retrieveTTS(text string) ([]byte, int, error) {
@@ -135,7 +139,8 @@ func retrieveTTS(text string) ([]byte, int, error) {
 	var audioLength int
 
 	dbMutex.Lock()
-	err := db.QueryRow("SELECT audio, audio_length_ms FROM audio WHERE hash = ?", audioHash).Scan(&audioContent, &audioLength)
+	err := db.QueryRow("SELECT audio, audio_length_ms FROM audio WHERE hash = ?",
+		audioHash).Scan(&audioContent, &audioLength)
 	dbMutex.Unlock()
 
 	if err != nil {
@@ -181,7 +186,8 @@ func renderPage(content string) (string, error) {
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	page, err := renderPage("<main><h1>Error - Page not found</h1></main>")
 	if err != nil {
-		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -191,14 +197,17 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func form(action, content string) template.HTML {
-	return template.HTML(fmt.Sprintf(`<form method="post" action="%s">%s</form>`, action, content))
+	return template.HTML(fmt.Sprintf(`<form method="post" action="%s">%s</form>`,
+		action, content))
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, title, source, content, author, timestamp FROM posts")
+	rows, err := db.Query(`
+		SELECT id, title, source, content, author, timestamp FROM posts`)
 	if err != nil {
 		log.Printf("Error querying posts: %v", err)
-		http.Error(w, "Internal Server Error: Unable to load posts", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load posts",
+			http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -209,9 +218,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var id int
 		var title, source, body, author, timestamp string
-		if err := rows.Scan(&id, &title, &source, &body, &author, &timestamp); err != nil {
+		err := rows.Scan(&id, &title, &source, &body, &author, &timestamp)
+		if err != nil {
 			log.Printf("Error scanning row: %v", err)
-			http.Error(w, "Internal Server Error: Unable to read post data", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error: Unable to read post data",
+				http.StatusInternalServerError)
 			return
 		}
 
@@ -219,31 +230,48 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		body = template.HTMLEscapeString(body)
 
 		if len(body) > 50 {
-			contentBuilder.WriteString(string(post(uniqueID, title, source, fmt.Sprintf("%.*s...", 512, body), author, timestamp, "short")))
+			contentBuilder.WriteString(string(post(uniqueID,
+				title,
+				source,
+				fmt.Sprintf("%.*s...", 512, body),
+				author,
+				timestamp,
+				"short")))
 		} else {
-			contentBuilder.WriteString(string(post(uniqueID, title, source, body, author, timestamp, "short")))
+			contentBuilder.WriteString(string(post(uniqueID,
+				title,
+				source,
+				body,
+				author,
+				timestamp,
+				"short")))
 		}
 	}
 
-	if err := rows.Err(); err != nil {
+	err = rows.Err()
+	if err != nil {
 		log.Printf("Error after iterating rows: %v", err)
-		http.Error(w, "Internal Server Error: Unable to load posts", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load posts",
+			http.StatusInternalServerError)
 		return
 	}
 
 	contentBuilder.WriteString(`
 	<script>
-		document.querySelectorAll(".post em").forEach((element) => {
-			const timestamp = element.getAttribute("data-timestamp");
-			const localDate = new Date(timestamp).toLocaleString(undefined, { timeZoneName: "short" });
-			element.textContent = element.textContent.split(" at ")[0] + " at " + localDate;
+		document.querySelectorAll(".post em").forEach((e) => {
+			const timestamp = e.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, {
+				timeZoneName: "short"
+			});
+			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
 		});
 	</script>
 	</main>`)
 
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
-		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -273,10 +301,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stmt, err := db.Prepare("SELECT title, source, content, author, timestamp FROM posts WHERE id = ?")
+	stmt, err := db.Prepare(`SELECT title, source, content, author, timestamp
+		FROM posts WHERE id = ?`)
 	if err != nil {
 		log.Printf("Error preparing SQL statement: %v", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve post",
+			http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -289,13 +319,14 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("Error querying post: %v", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve post",
+			http.StatusInternalServerError)
 		return
 	}
 
 	audio := fmt.Sprintf(`<div class="audio-container">
 	<audio id="audioPlayer" controls="controls" autobuffer="autobuffer">
-		<source src="/audio?id=%s&foo=bar" />
+		<source src="/audio?id=%s&t=%d" />
 	</audio>
 	<div>
 		<button onclick="document.getElementById('audioPlayer').playbackRate = 0.5;">0.5x</button>
@@ -305,7 +336,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	</div>
 	<label for="autoscroll">Autoscroll:</label>
 	<input id="autoscroll" name="autoscroll" type=checkbox checked></input>
-	</div>`, id)
+	</div>`, id, time.Now().Unix()) // TODO: Remove the anti-caching later.
 
 	navigation := `<div class="navigation">`
 
@@ -324,7 +355,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		content += "<div>" + template.HTMLEscapeString(line) + "</div>"
 		epsilon := 1
 		navigation += `
-		<div onclick="document.getElementById('audioPlayer').currentTime = ` + fmt.Sprintf("%f", float64(totalLength+epsilon)/1000) + `;">` +
+		<div onclick="document.getElementById('audioPlayer').currentTime = ` +
+			fmt.Sprintf("%f", float64(totalLength+epsilon)/1000) + `;">` +
 			`<span style="text-align:right;">` + formatTime(totalLength) + `</span>` +
 			`<span>` + template.HTMLEscapeString(line) + `</span>` +
 			`</div>`
@@ -333,7 +365,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		audioHash := calculateHash(line)
 
 		log.Printf("Searching for hash %s, %s", audioHash, line)
-		err := db.QueryRow("SELECT audio_length_ms FROM audio WHERE hash = ?", audioHash).Scan(&audioLength)
+		err := db.QueryRow("SELECT audio_length_ms FROM audio WHERE hash = ?",
+			audioHash).Scan(&audioLength)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				log.Printf("Error querying audio length: %v", err)
@@ -354,19 +387,24 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	script, err := templateFiles.ReadFile("template/script.js")
 	if err != nil {
-		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
 		return
 	}
 
-	content = `<main>` + string(post(id, title, source, content, author, timestamp, "full")) + audio + navigation + `</main>` + string(script)
+	content = `<main>` +
+		string(post(id, title, source, content, author, timestamp, "full")) +
+		audio + navigation + `</main>` + string(script)
 
 	page, err := renderPage(content)
 	if err != nil {
-		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
 		return
 	}
 
-	if _, err := fmt.Fprintln(w, page); err != nil {
+	_, err = fmt.Fprintln(w, page)
+	if err != nil {
 		log.Printf("Error writing response: %v", err)
 	}
 }
@@ -381,7 +419,8 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 	stmt, err := db.Prepare("SELECT content FROM posts WHERE id = ?")
 	if err != nil {
 		log.Printf("Error preparing SQL statement: %v", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve post",
+			http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -394,7 +433,8 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("Error querying post: %v", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve post",
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -411,7 +451,8 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 		audioContent, _, err = retrieveTTS(line)
 		if err != nil {
 			log.Printf("Error retrieving audio cache for line %s\n: %v", line, err)
-			http.Error(w, "Internal Server Error: Unable to retrieve audio", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error: Unable to retrieve audio",
+				http.StatusInternalServerError)
 			return
 		}
 
@@ -430,10 +471,12 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stmt, err := db.Prepare("SELECT title, content, author, source, timestamp FROM posts WHERE id = ?")
+	stmt, err := db.Prepare(`SELECT title, content, author, source, timestamp
+		FROM posts WHERE id = ?`)
 	if err != nil {
 		log.Printf("Error preparing SQL statement: %v", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve post",
+			http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -446,7 +489,8 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("Error querying post: %v", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve post",
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -454,7 +498,8 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	page, err := renderPage(content)
 
 	if err != nil {
-		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -511,7 +556,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		title, url, content, err = fetchWikipediaContent(keyword)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "Error fetching Wikipedia article", http.StatusInternalServerError)
+			http.Error(w, "Error fetching Wikipedia article",
+				http.StatusInternalServerError)
 			return
 		}
 	} else if source == "Link" {
@@ -519,7 +565,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		title, url, content, err = fetchLinkContent(keyword)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "Error fetching Link content", http.StatusInternalServerError)
+			http.Error(w, "Error fetching Link content",
+				http.StatusInternalServerError)
 			return
 		}
 	} else {
@@ -531,7 +578,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	pageContent := createPage(title, url, content)
 	page, err := renderPage(pageContent)
 	if err != nil {
-		http.Error(w, "Internal Server Error: Unable to load page", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -586,13 +634,17 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ttsError != nil {
-		http.Error(w, "Error processing text-to-speech: "+ttsError.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error processing text-to-speech: "+ttsError.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
-	_, err := db.Exec("INSERT INTO posts (title, source, content, author, timestamp) VALUES (?, ?, ?, ?, ?)", title, source, content, author, timestamp)
+	_, err := db.Exec(`INSERT INTO
+		posts(title, source, content, author, timestamp)
+		VALUES (?, ?, ?, ?, ?)`, title, source, content, author, timestamp)
 	if err != nil {
-		http.Error(w, "Error creating post: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error creating post: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
