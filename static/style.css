@@ -1,3 +1,7 @@
+:root {
+  font-size: 16px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -13,13 +17,13 @@ nav, footer {
   background-color: #282c34;
   color: white;
   text-align: center;
-  padding: 14px 0;
+  padding: 1rem 0;
   position: fixed;
   left: 0;
   right: 0;
   justify-content: center;
   background-color: #333;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
 }
 
 footer {
@@ -28,7 +32,7 @@ footer {
 
 nav a {
   color: white;
-  padding: 14px 20px;
+  padding: 1rem;
   text-decoration: none;
   text-align: center;
 }
@@ -39,7 +43,7 @@ nav a:hover {
 }
 
 footer span {
-  margin: 14px 0;
+  margin: 1rem 0;
 }
 
 main {
@@ -51,10 +55,9 @@ main {
 
 .post {
   background-color: white;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
 }
 
 .post em {
@@ -68,30 +71,30 @@ main {
 
 form {
   margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  padding: 1rem;
+  border: 0.05rem solid #ccc;
+  border-radius: 0.5rem;
   background-color: #f9f9f9;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
 }
 
 form label {
   display: block;
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 0.5rem;
 }
 
 input[type="text"],
 input[type="url"],
 textarea {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 0.05rem solid #ccc;
+  border-radius: 0.5rem;
   box-sizing: border-box;
   font-family: Arial, sans-serif;
-  font-size: 14px;
+  font-size: 0.75rem;
 }
 
 textarea {
@@ -101,11 +104,11 @@ textarea {
 input[type="submit"] {
   background-color: #4CAF50;
   color: white;
-  padding: 10px 20px;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 1rem;
   transition: background-color 0.3s ease;
 }
 
@@ -121,7 +124,7 @@ textarea:focus {
 
 .datasource {
   margin-bottom: 1rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
 }
 
 .datasources {
@@ -142,7 +145,7 @@ textarea:focus {
 
 audio {
   width: 20vw;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
 }
 
 .hidden {
@@ -156,15 +159,15 @@ audio {
   width: 20vw;
   bottom: 5rem;
   background-color: white;
-  border-radius: 5px;
-  padding: 15px;
+  border-radius: 0.5rem;
+  padding: 1rem;
   cursor: pointer;
   user-select: none;
   color: grey;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   overflow-x: hidden;
   overflow-y: scroll;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
 }
 
 .navigation div {
