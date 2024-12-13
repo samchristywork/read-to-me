@@ -8,118 +8,10 @@
   padding: 0;
 }
 
-body {
-  background-color: #f0f2f5;
-  font-family: Arial, sans-serif;
-}
-
-nav, footer {
-  background-color: #282c34;
-  background-color: #333;
-  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
-  color: white;
-  justify-content: center;
-  left: 0;
-  padding: 1rem 0;
+.audio-container {
+  left: 1rem;
   position: fixed;
-  right: 0;
-  text-align: center;
-}
-
-footer {
-  bottom: 0;
-}
-
-nav a {
-  color: white;
-  padding: 1rem;
-  text-align: center;
-  text-decoration: none;
-}
-
-nav a:hover {
-  background-color: #ddd;
-  color: black;
-}
-
-footer span {
-  margin: 1rem 0;
-}
-
-main {
-  margin: 0 auto;
-  max-width: 50vw;
-  padding-bottom: 5rem;
-  padding-top: 5rem;
-}
-
-.post {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-}
-
-.post em {
-  color: grey;
-  font-size: 0.75rem;
-}
-
-.short {
-  margin-bottom: 1rem;
-}
-
-form {
-  background-color: #f9f9f9;
-  border-radius: 0.5rem;
-  border: 0.05rem solid #ccc;
-  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-form label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-input[type="text"],
-input[type="url"],
-textarea {
-  border-radius: 0.5rem;
-  border: 0.05rem solid #ccc;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-  font-size: 0.75rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  width: 100%;
-}
-
-textarea {
-  resize: vertical;
-}
-
-input[type="submit"] {
-  background-color: #4CAF50;
-  border-radius: 0.5rem;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-  transition: background-color 0.3s ease;
-}
-
-input[type="submit"]:hover {
-  background-color: #45a049;
-}
-
-input:focus,
-textarea:focus {
-  border-color: #66afe9;
-  outline: none;
+  top: 5rem;
 }
 
 .datasource {
@@ -137,19 +29,15 @@ textarea:focus {
   white-space: pre-line;
 }
 
-.audio-container {
-  left: 1rem;
-  position: fixed;
-  top: 5rem;
-}
-
-audio {
-  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
-  width: 20vw;
-}
-
 .hidden {
   display: none;
+}
+
+.navigation div {
+  display: grid;
+  grid-gap: 1rem;
+  grid-template-columns: 3rem 1fr;
+  white-space: nowrap;
 }
 
 .navigation {
@@ -170,9 +58,121 @@ audio {
   width: 20vw;
 }
 
-.navigation div {
-  display: grid;
-  grid-gap: 1rem;
-  grid-template-columns: 3rem 1fr;
-  white-space: nowrap;
+.post em {
+  color: grey;
+  font-size: 0.75rem;
+}
+
+.post {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.short {
+  margin-bottom: 1rem;
+}
+
+audio {
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
+  width: 20vw;
+}
+
+body {
+  background-color: #f0f2f5;
+  font-family: Arial, sans-serif;
+}
+
+footer span {
+  margin: 1rem 0;
+}
+
+footer {
+  bottom: 0;
+}
+
+form label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+form {
+  background-color: #f9f9f9;
+  border-radius: 0.5rem;
+  border: 0.05rem solid #ccc;
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #66afe9;
+  outline: none;
+}
+
+input[type="submit"] {
+  background-color: #4CAF50;
+  border-radius: 0.5rem;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.3s ease;
+}
+
+input[type="submit"]:hover {
+  background-color: #45a049;
+}
+
+input[type="text"],
+input[type="url"],
+textarea {
+  border-radius: 0.5rem;
+  border: 0.05rem solid #ccc;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+main {
+  margin: 0 auto;
+  max-width: 50vw;
+  padding-bottom: 5rem;
+  padding-top: 5rem;
+}
+
+nav a {
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+nav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+nav, footer {
+  background-color: #282c34;
+  background-color: #333;
+  box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.1);
+  color: white;
+  justify-content: center;
+  left: 0;
+  padding: 1rem 0;
+  position: fixed;
+  right: 0;
+  text-align: center;
+}
+
+textarea {
+  resize: vertical;
 }
