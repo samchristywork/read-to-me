@@ -203,7 +203,8 @@ func form(action, content string) template.HTML {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
-		SELECT id, title, source, content, author, timestamp FROM posts`)
+		SELECT id, title, source, content, author, timestamp FROM posts
+		ORDER BY timestamp DESC`)
 	if err != nil {
 		log.Printf("Error querying posts: %v", err)
 		http.Error(w, "Internal Server Error: Unable to load posts",
