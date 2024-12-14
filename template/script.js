@@ -27,7 +27,7 @@
           block.style.color = 'black';
           if (first == true) {
             if (autoscroll.checked) {
-              let y = block.offsetTop-70;
+              let y = block.offsetTop-100;
               window.scrollTo({top: y, behavior: 'smooth'});
             }
             navigation[index].style.color='black';
