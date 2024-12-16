@@ -325,19 +325,22 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tmpl, err := templateFiles.ReadFile("template/audioControls.html")
+	if err != nil {
+		log.Printf("Error reading head template: %v", err)
+		return
+	}
+	audioControls := string(tmpl)
+
 	audio := fmt.Sprintf(`<div class="audio-container">
 	<audio id="audioPlayer" controls="controls" autobuffer="autobuffer">
 		<source src="/audio?id=%s&t=%d" />
 	</audio>
-	<div>
-		<button onclick="document.getElementById('audioPlayer').playbackRate = 0.5;">0.5x</button>
-		<button onclick="document.getElementById('audioPlayer').playbackRate = 1;">1x</button>
-		<button onclick="document.getElementById('audioPlayer').playbackRate = 1.5;">1.5x</button>
-		<button onclick="document.getElementById('audioPlayer').playbackRate = 2;">2x</button>
-	</div>
+	%s
 	<label for="autoscroll">Autoscroll:</label>
 	<input id="autoscroll" name="autoscroll" type=checkbox checked></input>
-	</div>`, id, time.Now().Unix()) // TODO: Remove the anti-caching later.
+	</div>`, id, time.Now().Unix(), audioControls)
+	// TODO: Remove the anti-caching later.
 
 	navigation := `<div class="navigation">`
 
