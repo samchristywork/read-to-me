@@ -230,7 +230,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		uniqueID := fmt.Sprintf("%d", id)
 		body = template.HTMLEscapeString(body)
 
-		if len(body) > 50 {
+		if len(body) > 512 {
 			contentBuilder.WriteString(string(post(uniqueID,
 				title,
 				source,
