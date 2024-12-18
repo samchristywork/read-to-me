@@ -637,7 +637,7 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if ttsError != nil {
+	if ttsError != nil && !strings.Contains(ttsError.Error(), "UNIQUE constraint failed") {
 		http.Error(w, "Error processing text-to-speech: "+ttsError.Error(),
 			http.StatusInternalServerError)
 		return
