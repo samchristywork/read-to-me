@@ -686,6 +686,25 @@ func main() {
 		log.Fatalf("Error creating audio table: %v", err)
 	}
 
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS collections (
+		id INTEGER PRIMARY KEY,
+		title TEXT,
+		description TEXT,
+		author TEXT,
+		timestamp TEXT
+	)`)
+	if err != nil {
+		log.Fatalf("Error creating posts table: %v", err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS collection_posts (
+		collection_id INTEGER,
+		post_id INTEGER
+	)`)
+	if err != nil {
+		log.Fatalf("Error creating collection_posts table: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
