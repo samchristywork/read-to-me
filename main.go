@@ -517,6 +517,29 @@ func createPage(title, source, body string) string {
 	source = strings.ReplaceAll(source, `"`, "")
 	body = strings.ReplaceAll(body, `"`, "")
 
+	var collectionDropdown string
+	rows, err := db.Query(`SELECT id, title FROM collections WHERE author = "Anonymous"`)
+	if err != nil {
+		log.Printf("Error querying collections: %v", err)
+	} else {
+		defer rows.Close()
+
+		collectionDropdown = `<label for="collection">Collection:</label>
+		<select id="collection" name="collection">
+			<option value="">None</option>`
+		for rows.Next() {
+			var id int
+			var title string
+			err := rows.Scan(&id, &title)
+			if err != nil {
+				log.Printf("Error scanning row: %v", err)
+				continue
+			}
+			collectionDropdown += fmt.Sprintf(`<option value="%d">%s</option>`, id, title)
+		}
+		collectionDropdown += `</select><br>`
+	}
+
 	return fmt.Sprintf(`
 		<main>
 			%s
@@ -528,6 +551,7 @@ func createPage(title, source, body string) string {
 		string(form("new-post", `
 			<label for="title">Title:</label>
 			<input type="text" id="title" name="title" value="`+title+`" autofocus required><br>
+			`+collectionDropdown+`
 			<label for="source">Source:</label>
 			<input type="url" id="source" name="source" placeholder="https://example.com" value="`+source+`"><br>
 			<label for="content">Body:</label>
