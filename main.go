@@ -616,6 +616,26 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func createCollectionHandler(w http.ResponseWriter, r *http.Request) {
+	html := `<main>`+string(form("new-collection", `
+	<label for="title">Title:</label>
+	<input type="text" id="title" name="title" required><br>
+	<label for="description">Description:</label>
+	<textarea id="description" name="description" cols="80" rows="15"></textarea><br>
+	<input type="submit" value="Submit"/>`))+`</main>`
+
+	page, err := renderPage(html)
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
 func newPostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -762,6 +782,8 @@ func main() {
 			editHandler(w, r)
 		case "/create":
 			createHandler(w, r)
+		case "/create-collection":
+			createCollectionHandler(w, r)
 		case "/new-post":
 			newPostHandler(w, r)
 		default:
