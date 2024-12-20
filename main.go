@@ -599,6 +599,7 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	title := template.HTMLEscapeString(r.FormValue("title"))
+	collection := template.HTMLEscapeString(r.FormValue("collection"))
 	source := template.HTMLEscapeString(r.FormValue("source"))
 	content := r.FormValue("content")
 	author := template.HTMLEscapeString("Anonymous")
@@ -643,13 +644,31 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.Exec(`INSERT INTO
+	result, err := db.Exec(`INSERT INTO
 		posts(title, source, content, author, timestamp)
 		VALUES (?, ?, ?, ?, ?)`, title, source, content, author, timestamp)
 	if err != nil {
 		http.Error(w, "Error creating post: "+err.Error(),
 			http.StatusInternalServerError)
 		return
+	}
+
+	if collection != "" {
+		lastInsertID, err := result.LastInsertId()
+		if err != nil {
+			http.Error(w, "Error getting last insert ID: "+err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
+
+		_, err = db.Exec(`INSERT INTO
+			collection_posts(collection_id, post_id)
+			VALUES (?, ?)`, collection, lastInsertID)
+		if err != nil {
+			http.Error(w, "Error adding post to collection: "+err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
