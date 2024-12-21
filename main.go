@@ -718,6 +718,29 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func newCollectionHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	title := template.HTMLEscapeString(r.FormValue("title"))
+	description := template.HTMLEscapeString(r.FormValue("description"))
+	author := template.HTMLEscapeString("Anonymous")
+	timestamp := time.Now().UTC().Format(time.RFC3339)
+
+	_, err := db.Exec(`INSERT INTO
+		collections(title, description, author, timestamp)
+		VALUES (?, ?, ?, ?)`, title, description, author, timestamp)
+	if err != nil {
+		http.Error(w, "Error creating collection: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/collections", http.StatusSeeOther)
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")
@@ -786,6 +809,8 @@ func main() {
 			createCollectionHandler(w, r)
 		case "/new-post":
 			newPostHandler(w, r)
+		case "/new-collection":
+			newCollectionHandler(w, r)
 		default:
 			fs := http.FileServer(http.Dir("./static"))
 			filePath := "./static" + r.URL.Path
