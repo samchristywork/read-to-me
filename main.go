@@ -133,6 +133,16 @@ func post(id, title, url, content, author, time, class string) template.HTML {
 	`, class, id, title, url, "source", time, author, time, content))
 }
 
+func post2(id, title, content, author, time, class string) template.HTML {
+	return template.HTML(fmt.Sprintf(`
+		<div class="post %s">
+			<h3><a href="/collection?id=%s">%s</a></h3>
+			<em data-timestamp="%s">%s at %s</em>
+			<div class="post-body">%s</div>
+		</div>
+	`, class, id, title, time, author, time, content))
+}
+
 func retrieveTTS(text string) ([]byte, int, error) {
 	audioHash := calculateHash(text)
 	var audioContent []byte
@@ -295,7 +305,7 @@ func formatTime(ms int) string {
 	}
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
+func postHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "Post ID is required", http.StatusBadRequest)
@@ -398,7 +408,16 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	content = `<main>` +
 		string(post(id, title, source, content, author, timestamp, "full")) +
-		audio + navigation + `</main>` + string(script)
+		audio + navigation + `<script>
+		document.querySelectorAll(".post em").forEach((e) => {
+			const timestamp = e.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, {
+				timeZoneName: "short"
+			});
+			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
+		});
+	</script>
+	</main>` + string(script)
 
 	page, err := renderPage(content)
 	if err != nil {
@@ -412,6 +431,104 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error writing response: %v", err)
 	}
 }
+
+func collectionHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Collection ID is required", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT post_id FROM collection_posts WHERE collection_id = ?`, id)
+	if err != nil {
+		log.Printf("Error querying posts: %v", err)
+		http.Error(w, "Internal Server Error: Unable to load posts",
+			http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var contentBuilder strings.Builder
+	contentBuilder.WriteString(`<main>`)
+	for rows.Next() {
+		var postID int
+		err := rows.Scan(&postID)
+		if err != nil {
+			log.Printf("Error scanning row: %v", err)
+			http.Error(w, "Internal Server Error: Unable to read post data",
+				http.StatusInternalServerError)
+			return
+		}
+
+		stmt, err := db.Prepare(`SELECT title, source, content, author, timestamp
+			FROM posts WHERE id = ?`)
+		if err != nil {
+			log.Printf("Error preparing SQL statement: %v", err)
+			http.Error(w, "Internal Server Error: Unable to retrieve post",
+				http.StatusInternalServerError)
+			return
+		}
+		defer stmt.Close()
+
+		var title, source, body, author, timestamp string
+		err = stmt.QueryRow(postID).Scan(&title, &source, &body, &author, &timestamp)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "Post not found", http.StatusNotFound)
+				return
+			}
+			log.Printf("Error querying post: %v", err)
+			http.Error(w, "Internal Server Error: Unable to retrieve post",
+				http.StatusInternalServerError)
+			return
+		}
+
+		uniqueID := fmt.Sprintf("%d", postID)
+
+		if len(body) > 512 {
+			contentBuilder.WriteString(string(post(uniqueID,
+				title,
+				source,
+				fmt.Sprintf("%.*s...", 512, body),
+				author,
+				timestamp,
+				"short")))
+		} else {
+			contentBuilder.WriteString(string(post(uniqueID,
+				title,
+				source,
+				body,
+				author,
+				timestamp,
+				"short")))
+		}
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Printf("Error after iterating rows: %v", err)
+		http.Error(w, "Internal Server Error: Unable to load posts",
+			http.StatusInternalServerError)
+		return
+	}
+
+	contentBuilder.WriteString(`<script>
+		document.querySelectorAll(".post em").forEach((e) => {
+			const timestamp = e.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, {
+				timeZoneName: "short"
+			});
+			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
+		});
+	</script>
+	</main>`)
+	page, err := renderPage(contentBuilder.String())
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
+		return
+	}
 
 func audioHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
@@ -798,7 +915,9 @@ func main() {
 		case "/":
 			homeHandler(w, r)
 		case "/post":
-			viewHandler(w, r)
+			postHandler(w, r)
+		case "/collection":
+			collectionHandler(w, r)
 		case "/audio":
 			audioHandler(w, r)
 		case "/edit":
