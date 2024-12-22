@@ -530,6 +530,79 @@ func collectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
+func collectionsHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query(`
+		SELECT id, title, description, author, timestamp FROM collections
+		ORDER BY timestamp DESC`)
+	if err != nil {
+		log.Printf("Error querying collections: %v", err)
+		http.Error(w, "Internal Server Error: Unable to load collections",
+			http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var contentBuilder strings.Builder
+	contentBuilder.WriteString(`<main>
+		<a href="/create-collection">Create Collection</a>
+	`)
+
+	for rows.Next() {
+		var id int
+		var title, description, author, timestamp string
+		err := rows.Scan(&id, &title, &description, &author, &timestamp)
+		if err != nil {
+			log.Printf("Error scanning row: %v", err)
+			http.Error(w, "Internal Server Error: Unable to read collection data",
+				http.StatusInternalServerError)
+			return
+		}
+
+		uniqueID := fmt.Sprintf("%d", id)
+
+		contentBuilder.WriteString(string(post2(uniqueID,
+			title,
+			description,
+			author,
+			timestamp,
+			"short")))
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Printf("Error after iterating rows: %v", err)
+		http.Error(w, "Internal Server Error: Unable to load collections",
+			http.StatusInternalServerError)
+		return
+	}
+
+	contentBuilder.WriteString(`<script>
+		document.querySelectorAll(".post em").forEach((e) => {
+			const timestamp = e.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, {
+				timeZoneName: "short"
+			});
+			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
+		});
+	</script>
+	</main>`)
+	page, err := renderPage(contentBuilder.String())
+	if err != nil {
+		http.Error(w, "Internal Server Error: Unable to load page",
+			http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := fmt.Fprintln(w, page); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+}
+
 func audioHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
@@ -918,6 +991,8 @@ func main() {
 			postHandler(w, r)
 		case "/collection":
 			collectionHandler(w, r)
+		case "/collections":
+			collectionsHandler(w, r)
 		case "/audio":
 			audioHandler(w, r)
 		case "/edit":
