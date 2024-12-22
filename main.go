@@ -186,11 +186,21 @@ func renderPage(content string) (string, error) {
 	}
 	footer := string(tmpl)
 
+	script := `<script>
+		document.querySelectorAll(".post em").forEach((e) => {
+			const timestamp = e.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, {
+				timeZoneName: "short"
+			});
+			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
+		});
+	</script>`
+
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>%s</head>
-<body>%s%s%s</body>
-</html>`, head, nav, content, footer), nil
+<body>%s%s%s</body>%s
+</html>`, head, nav, content, footer, script), nil
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
@@ -267,17 +277,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentBuilder.WriteString(`
-	<script>
-		document.querySelectorAll(".post em").forEach((e) => {
-			const timestamp = e.getAttribute("data-timestamp");
-			const localDate = new Date(timestamp).toLocaleString(undefined, {
-				timeZoneName: "short"
-			});
-			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
-		});
-	</script>
-	</main>`)
+	contentBuilder.WriteString(`</main>`)
 
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
@@ -408,16 +408,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 	content = `<main>` +
 		string(post(id, title, source, content, author, timestamp, "full")) +
-		audio + navigation + `<script>
-		document.querySelectorAll(".post em").forEach((e) => {
-			const timestamp = e.getAttribute("data-timestamp");
-			const localDate = new Date(timestamp).toLocaleString(undefined, {
-				timeZoneName: "short"
-			});
-			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
-		});
-	</script>
-	</main>` + string(script)
+		audio + navigation + `</main>` + string(script)
 
 	page, err := renderPage(content)
 	if err != nil {
@@ -513,16 +504,7 @@ func collectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentBuilder.WriteString(`<script>
-		document.querySelectorAll(".post em").forEach((e) => {
-			const timestamp = e.getAttribute("data-timestamp");
-			const localDate = new Date(timestamp).toLocaleString(undefined, {
-				timeZoneName: "short"
-			});
-			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
-		});
-	</script>
-	</main>`)
+	contentBuilder.WriteString(`</main>`)
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
 		http.Error(w, "Internal Server Error: Unable to load page",
@@ -581,16 +563,7 @@ func collectionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentBuilder.WriteString(`<script>
-		document.querySelectorAll(".post em").forEach((e) => {
-			const timestamp = e.getAttribute("data-timestamp");
-			const localDate = new Date(timestamp).toLocaleString(undefined, {
-				timeZoneName: "short"
-			});
-			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
-		});
-	</script>
-	</main>`)
+	contentBuilder.WriteString(`</main>`)
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
 		http.Error(w, "Internal Server Error: Unable to load page",
