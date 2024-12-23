@@ -30,6 +30,10 @@ var templateFiles embed.FS
 
 var db *sql.DB
 
+func perror(message string, err error) {
+	log.Printf("%s: %v", message, err)
+}
+
 func calculateAudioLength(audioContent []byte) (int, error) {
 	reader := bytes.NewReader(audioContent)
 	decoder := mp3.NewDecoder(reader)

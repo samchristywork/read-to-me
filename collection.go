@@ -1,13 +1,12 @@
 package main
 
 import (
-	"time"
-	"html/template"
+	"database/sql"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
-	"log"
-	"database/sql"
+	"time"
 )
 
 func collection(id, title, content, author, time, class string) template.HTML {
@@ -30,7 +29,7 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
 		SELECT post_id FROM collection_posts WHERE collection_id = ?`, id)
 	if err != nil {
-		log.Printf("Error querying posts: %v", err)
+		perror("Error querying collections", err)
 		http.Error(w, "Internal Server Error: Unable to load posts",
 			http.StatusInternalServerError)
 		return
@@ -43,7 +42,7 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		var postID int
 		err := rows.Scan(&postID)
 		if err != nil {
-			log.Printf("Error scanning row: %v", err)
+			perror("Error scanning row", err)
 			http.Error(w, "Internal Server Error: Unable to read post data",
 				http.StatusInternalServerError)
 			return
@@ -52,7 +51,7 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		stmt, err := db.Prepare(`SELECT title, source, content, author, timestamp
 			FROM posts WHERE id = ?`)
 		if err != nil {
-			log.Printf("Error preparing SQL statement: %v", err)
+			perror("Error preparing SQL statement", err)
 			http.Error(w, "Internal Server Error: Unable to retrieve post",
 				http.StatusInternalServerError)
 			return
@@ -63,10 +62,11 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		err = stmt.QueryRow(postID).Scan(&title, &source, &body, &author, &timestamp)
 		if err != nil {
 			if err == sql.ErrNoRows {
+				perror("Post not found", err)
 				http.Error(w, "Post not found", http.StatusNotFound)
 				return
 			}
-			log.Printf("Error querying post: %v", err)
+			perror("Error querying post", err)
 			http.Error(w, "Internal Server Error: Unable to retrieve post",
 				http.StatusInternalServerError)
 			return
@@ -95,7 +95,7 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = rows.Err()
 	if err != nil {
-		log.Printf("Error after iterating rows: %v", err)
+		perror("Error after iterating rows", err)
 		http.Error(w, "Internal Server Error: Unable to load posts",
 			http.StatusInternalServerError)
 		return
@@ -104,13 +104,14 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 	contentBuilder.WriteString(`</main>`)
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
+		perror("Error rendering page", err)
 		http.Error(w, "Internal Server Error: Unable to load page",
 			http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := fmt.Fprintln(w, page); err != nil {
-		log.Printf("Error writing response: %v", err)
+		perror("Error writing response", err)
 	}
 }
 
@@ -119,7 +120,7 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 		SELECT id, title, description, author, timestamp FROM collections
 		ORDER BY timestamp DESC`)
 	if err != nil {
-		log.Printf("Error querying collections: %v", err)
+		perror("Error querying collections", err)
 		http.Error(w, "Internal Server Error: Unable to load collections",
 			http.StatusInternalServerError)
 		return
@@ -136,7 +137,7 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 		var title, description, author, timestamp string
 		err := rows.Scan(&id, &title, &description, &author, &timestamp)
 		if err != nil {
-			log.Printf("Error scanning row: %v", err)
+			perror("Error scanning row", err)
 			http.Error(w, "Internal Server Error: Unable to read collection data",
 				http.StatusInternalServerError)
 			return
@@ -154,7 +155,7 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = rows.Err()
 	if err != nil {
-		log.Printf("Error after iterating rows: %v", err)
+		perror("Error after iterating rows", err)
 		http.Error(w, "Internal Server Error: Unable to load collections",
 			http.StatusInternalServerError)
 		return
@@ -163,33 +164,35 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 	contentBuilder.WriteString(`</main>`)
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
+		perror("Error rendering page", err)
 		http.Error(w, "Internal Server Error: Unable to load page",
 			http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := fmt.Fprintln(w, page); err != nil {
-		log.Printf("Error writing response: %v", err)
+		perror("Error writing response", err)
 	}
 }
 
 func createCollectionHandler(w http.ResponseWriter, r *http.Request) {
-	html := `<main>`+string(form("new-collection", `
+	html := `<main>` + string(form("new-collection", `
 	<label for="title">Title:</label>
 	<input type="text" id="title" name="title" required><br>
 	<label for="description">Description:</label>
 	<textarea id="description" name="description" cols="80" rows="15"></textarea><br>
-	<input type="submit" value="Submit"/>`))+`</main>`
+	<input type="submit" value="Submit"/>`)) + `</main>`
 
 	page, err := renderPage(html)
 	if err != nil {
+		perror("Error rendering page", err)
 		http.Error(w, "Internal Server Error: Unable to load page",
 			http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := fmt.Fprintln(w, page); err != nil {
-		log.Printf("Error writing response: %v", err)
+		perror("Error writing response", err)
 	}
 }
 
@@ -208,6 +211,7 @@ func newCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		collections(title, description, author, timestamp)
 		VALUES (?, ?, ?, ?)`, title, description, author, timestamp)
 	if err != nil {
+		perror("Error inserting collection", err)
 		http.Error(w, "Error creating collection: "+err.Error(),
 			http.StatusInternalServerError)
 		return
