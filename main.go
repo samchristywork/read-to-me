@@ -43,7 +43,8 @@ func calculateAudioLength(audioContent []byte) (int, error) {
 	var totalDuration time.Duration
 
 	for {
-		if err := decoder.Decode(&frame, &skipped); err != nil {
+		err := decoder.Decode(&frame, &skipped)
+		if err != nil {
 			break
 		}
 		totalDuration += frame.Duration()
@@ -180,18 +181,30 @@ func renderPage(content string) (string, error) {
 </html>`, head, nav, content, footer, script), nil
 }
 
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	page, err := renderPage("<main><h1>Error - Page not found</h1></main>")
+func httpError(w http.ResponseWriter, message string, e int) {
+	page, err := renderPage(fmt.Sprintf("<main><h1>Error</h1><p>%s</p></main>", message))
 	if err != nil {
 		perror("Error rendering page", err)
-		http.Error(w, "Internal Server Error: Unable to load page",
-			http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to load page", e)
 		return
 	}
 
-	if _, err := fmt.Fprintln(w, page); err != nil {
+	_, err = fmt.Fprintln(w, page)
+	if err != nil {
 		perror("Error writing response", err)
 	}
+}
+
+func badRequest(w http.ResponseWriter, message string) {
+	httpError(w, message, http.StatusBadRequest)
+}
+
+func internalServerError(w http.ResponseWriter, message string) {
+	httpError(w, message, http.StatusInternalServerError)
+}
+
+func notFound(w http.ResponseWriter, message string) {
+	httpError(w, message, http.StatusNotFound)
 }
 
 func form(action, content string) template.HTML {
@@ -216,16 +229,13 @@ func formatTime(ms int) string {
 func audioHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		perror("Post ID is required", nil)
-		http.Error(w, "Post ID is required", http.StatusBadRequest)
+		badRequest(w, "Post ID is required")
 		return
 	}
 
 	stmt, err := db.Prepare("SELECT content FROM posts WHERE id = ?")
 	if err != nil {
-		perror("Error preparing SQL statement", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post",
-			http.StatusInternalServerError)
+		internalServerError(w, "Unable to retrieve post")
 		return
 	}
 	defer stmt.Close()
@@ -237,9 +247,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Post not found", http.StatusNotFound)
 			return
 		}
-		perror("Error querying post", err)
-		http.Error(w, "Internal Server Error: Unable to retrieve post",
-			http.StatusInternalServerError)
+		internalServerError(w, "Unable to retrieve post")
 		return
 	}
 
@@ -255,9 +263,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 		var audioContent []byte
 		audioContent, _, err = retrieveTTS(line)
 		if err != nil {
-			perror("Error retrieving audio cache", err)
-			http.Error(w, "Internal Server Error: Unable to retrieve audio",
-				http.StatusInternalServerError)
+			internalServerError(w, "Unable to retrieve audio")
 			return
 		}
 
@@ -352,8 +358,9 @@ func main() {
 		default:
 			fs := http.FileServer(http.Dir("./static"))
 			filePath := "./static" + r.URL.Path
-			if _, err := os.Stat(filePath); os.IsNotExist(err) {
-				notFoundHandler(w, r)
+			_, err := os.Stat(filePath)
+			if os.IsNotExist(err) {
+				notFound(w, "Page not found")
 			} else {
 				fs.ServeHTTP(w, r)
 			}
