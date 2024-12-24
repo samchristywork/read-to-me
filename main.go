@@ -64,7 +64,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 
 	audioContent, audioLength, err := retrieveTTS(text)
 	if err != nil {
-		log.Printf("Error checking existing audio: %v", err)
+		perror("Error checking existing audio", err)
 		return "", "", nil, 0, err
 	}
 
@@ -76,6 +76,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	ctx := context.Background()
 	client, err := texttospeech.NewClient(ctx)
 	if err != nil {
+		perror("Error creating text-to-speech client", err)
 		return "", "", nil, 0, err
 	}
 	defer client.Close()
@@ -93,26 +94,21 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 		},
 	}
 
-	log.Printf("Synthesizing: %.*s\n", 40, text)
-
 	resp, err := client.SynthesizeSpeech(ctx, &req)
 	if err != nil {
+		perror("Error synthesizing text", err)
 		_, t, c, l, _ := generateTTS("Text could not be synthesized.")
 		_, err = db.Exec(`INSERT INTO audio (hash, text, audio, audio_length_ms)
 			VALUES (?, ?, ?, ?)`, audioHash, t, c, l)
-		log.Printf("Error synthesizing text: %v", err)
 		return "", "", nil, 0, err
 	}
 
 	audioContent = resp.AudioContent
 	audioLength, err = calculateAudioLength(audioContent)
 	if err != nil {
-		log.Printf("Error calculating audio length: %v", err)
+		perror("Error calculating audio length", err)
 		return "", "", nil, 0, err
 	}
-
-	log.Printf("Inserting into audio table: hash=%s, text=%s, audio_length_ms=%d",
-		audioHash, text, audioLength)
 
 	dbMutex.Lock()
 	_, err = db.Exec(`INSERT INTO audio (hash, text, audio, audio_length_ms)
@@ -120,7 +116,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	dbMutex.Unlock()
 
 	if err != nil {
-		log.Printf("Error saving audio cache: %v", err)
+		perror("Error inserting audio into database", err)
 		return "", "", nil, 0, err
 	}
 
@@ -138,10 +134,7 @@ func retrieveTTS(text string) ([]byte, int, error) {
 	dbMutex.Unlock()
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, 0, nil
-		}
-		log.Printf("Error fetching audio cache: %v", err)
+		perror("Error fetching audio cache", err)
 		return nil, 0, err
 	}
 
@@ -151,21 +144,21 @@ func retrieveTTS(text string) ([]byte, int, error) {
 func renderPage(content string) (string, error) {
 	tmpl, err := templateFiles.ReadFile("template/head.html")
 	if err != nil {
-		log.Printf("Error reading head template: %v", err)
+		perror("Error reading head template", err)
 		return "", err
 	}
 	head := string(tmpl)
 
 	tmpl, err = templateFiles.ReadFile("template/nav.html")
 	if err != nil {
-		log.Printf("Error reading nav template: %v", err)
+		perror("Error reading nav template", err)
 		return "", err
 	}
 	nav := string(tmpl)
 
 	tmpl, err = templateFiles.ReadFile("template/footer.html")
 	if err != nil {
-		log.Printf("Error reading footer template: %v", err)
+		perror("Error reading footer template", err)
 		return "", err
 	}
 	footer := string(tmpl)
@@ -190,13 +183,14 @@ func renderPage(content string) (string, error) {
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	page, err := renderPage("<main><h1>Error - Page not found</h1></main>")
 	if err != nil {
+		perror("Error rendering page", err)
 		http.Error(w, "Internal Server Error: Unable to load page",
 			http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := fmt.Fprintln(w, page); err != nil {
-		log.Printf("Error writing response: %v", err)
+		perror("Error writing response", err)
 	}
 }
 
@@ -222,13 +216,14 @@ func formatTime(ms int) string {
 func audioHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
+		perror("Post ID is required", nil)
 		http.Error(w, "Post ID is required", http.StatusBadRequest)
 		return
 	}
 
 	stmt, err := db.Prepare("SELECT content FROM posts WHERE id = ?")
 	if err != nil {
-		log.Printf("Error preparing SQL statement: %v", err)
+		perror("Error preparing SQL statement", err)
 		http.Error(w, "Internal Server Error: Unable to retrieve post",
 			http.StatusInternalServerError)
 		return
@@ -242,7 +237,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Post not found", http.StatusNotFound)
 			return
 		}
-		log.Printf("Error querying post: %v", err)
+		perror("Error querying post", err)
 		http.Error(w, "Internal Server Error: Unable to retrieve post",
 			http.StatusInternalServerError)
 		return
@@ -260,7 +255,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 		var audioContent []byte
 		audioContent, _, err = retrieveTTS(line)
 		if err != nil {
-			log.Printf("Error retrieving audio cache for line %s\n: %v", line, err)
+			perror("Error retrieving audio cache", err)
 			http.Error(w, "Internal Server Error: Unable to retrieve audio",
 				http.StatusInternalServerError)
 			return
@@ -291,7 +286,8 @@ func main() {
 		timestamp TEXT
 	)`)
 	if err != nil {
-		log.Fatalf("Error creating posts table: %v", err)
+		perror("Error creating posts table", err)
+		return
 	}
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS audio (
@@ -302,7 +298,8 @@ func main() {
 		audio_length_ms INTEGER
 	)`)
 	if err != nil {
-		log.Fatalf("Error creating audio table: %v", err)
+		perror("Error creating audio table", err)
+		return
 	}
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS collections (
@@ -313,7 +310,8 @@ func main() {
 		timestamp TEXT
 	)`)
 	if err != nil {
-		log.Fatalf("Error creating posts table: %v", err)
+		perror("Error creating collections table", err)
+		return
 	}
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS collection_posts (
@@ -321,12 +319,15 @@ func main() {
 		post_id INTEGER
 	)`)
 	if err != nil {
-		log.Fatalf("Error creating collection_posts table: %v", err)
+		perror("Error creating collection_posts table", err)
+		return
 	}
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Request: %s", r.URL.Path)
+
 		switch r.URL.Path {
 		case "/":
 			viewPostsHandler(w, r)
@@ -360,7 +361,8 @@ func main() {
 	})
 
 	fmt.Println("Starting server on :4343")
-	if err = http.ListenAndServe(":4343", mux); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+	err = http.ListenAndServe(":4343", mux)
+	if err != nil {
+		perror("Error starting server", err)
 	}
 }

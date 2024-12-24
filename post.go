@@ -97,7 +97,6 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 		var audioLength int
 		audioHash := calculateHash(line)
 
-		//log.Printf("Searching for hash %s, %s", audioHash, line)
 		err := db.QueryRow("SELECT audio_length_ms FROM audio WHERE hash = ?",
 			audioHash).Scan(&audioLength)
 		if err != nil {
@@ -107,13 +106,11 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 
 		content += fmt.Sprintf(`<span class="hidden">%d</span>`, audioLength)
 
-		//fmt.Printf("Audio Length: %d %.*s\n", audioLength, 40, line)
 		totalLength += audioLength
 	}
 
 	navigation += "</div>"
 
-	//fmt.Printf("Total length of all lines (in ms): %d\n", totalLength)
 	script, err := templateFiles.ReadFile("template/script.js")
 	if err != nil {
 		perror("Error reading script template", err)
