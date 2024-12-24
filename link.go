@@ -2,13 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/k3a/html2text"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"time"
+
+	"github.com/k3a/html2text"
 )
 
 func fetchLinkContent(url string) (string, string, string, error) {
-	resp, err := http.Get(url)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to fetch link: %v", err)
 	}
@@ -18,12 +24,11 @@ func fetchLinkContent(url string) (string, string, string, error) {
 		return "", "", "", fmt.Errorf("failed to fetch link: received status code %d", resp.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to read link content: %v", err)
 	}
 
 	text := html2text.HTML2Text(string(body))
-
 	return "", url, text, nil
 }
