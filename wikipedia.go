@@ -8,16 +8,16 @@ import (
 
 func fetchWikipediaContent(keyword string) (string, string, string, error) {
 	searchResult, _, err := gowiki.Search(keyword, 1, false)
-	if err != nil || len(searchResult) == 0 {
-		return "", "", "", fmt.Errorf("Error fetching Wikipedia article")
+	if err != nil || searchResult == nil || len(searchResult) == 0 {
+		return "", "", "", fmt.Errorf("Could not find any wikipedia page for keyword: %s", keyword)
 	}
 
-	p, err := gowiki.GetPage(searchResult[0], -1, false, true)
+	page, err := gowiki.GetPage(searchResult[0], -1, false, true)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	content, err := p.GetContent()
+	content, err := page.GetContent()
 	if err != nil {
 		return "", "", "", err
 	}
@@ -32,5 +32,5 @@ func fetchWikipediaContent(keyword string) (string, string, string, error) {
 			contentBuilder.WriteString(trimmed + "\n")
 		}
 	}
-	return p.Title, p.URL, contentBuilder.String(), nil
+	return page.Title, page.URL, contentBuilder.String(), nil
 }
