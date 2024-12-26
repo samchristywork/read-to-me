@@ -38,7 +38,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	audioHash := calculateHash(text)
 
 	audioContent, audioLength, err := retrieveTTS(text)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		perror("Error checking existing audio", err)
 		return "", "", nil, 0, err
 	}
@@ -107,6 +107,10 @@ func retrieveTTS(text string) ([]byte, int, error) {
 	err := db.QueryRow("SELECT audio, audio_length_ms FROM audio WHERE hash = ?",
 		audioHash).Scan(&audioContent, &audioLength)
 	dbMutex.Unlock()
+
+	if err == sql.ErrNoRows {
+		return nil, 0, err
+	}
 
 	if err != nil {
 		perror("Error fetching audio cache", err)
