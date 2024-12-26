@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"github.com/trietmn/go-wiki"
 	"strings"
+	"net/url"
 )
 
 func fetchWikipediaContent(keyword string) (string, string, string, error) {
+	keyword = url.QueryEscape(keyword)
+
 	searchResult, _, err := gowiki.Search(keyword, 1, false)
 	if err != nil || searchResult == nil || len(searchResult) == 0 {
 		return "", "", "", fmt.Errorf("Could not find any wikipedia page for keyword: %s", keyword)
