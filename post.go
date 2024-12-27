@@ -110,9 +110,22 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	scripts := string(script) + `<script>
+		document.addEventListener("keydown", function(event) {
+			if (event.key === " ") {
+				var audio = document.getElementById("audioPlayer");
+				if (audio.paused) {
+					audio.play();
+				} else {
+					audio.pause();
+				}
+			}
+		});
+	</script>`
+
 	content = `<main>` +
 		string(post(id, title, source, content, author, timestamp, "full")) +
-		audio + navigation + `</main>` + string(script)
+		audio + navigation + `</main>` + scripts
 
 	page, err := renderPage(content)
 	if err != nil {
