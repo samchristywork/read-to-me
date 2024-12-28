@@ -114,6 +114,7 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 		document.addEventListener("keydown", function(event) {
 			if (event.key === " ") {
 				var audio = document.getElementById("audioPlayer");
+				event.preventDefault();
 				if (audio.paused) {
 					audio.play();
 				} else {
