@@ -238,6 +238,7 @@ func createPost(title, source, body string) string {
 			<div class="datasources">
 				<div class="datasource">%s</div>
 				<div class="datasource">%s</div>
+				<div class="datasource">%s</div>
 			</div>
 		</main>`,
 		string(form("new-post", `
@@ -254,6 +255,12 @@ func createPost(title, source, body string) string {
 			<label for="keyword">Wikipedia:</label>
 			<input type="text" id="keyword" name="keyword" required><br>
 			<input type="hidden" id="source" name="source" value="Wikipedia">
+			<input type="submit" value="Search"/>
+		`)),
+		string(form("create-post", `
+			<label for="keyword">Wikiquote:</label>
+			<input type="text" id="keyword" name="keyword" required><br>
+			<input type="hidden" id="source" name="source" value="Wikiquote">
 			<input type="submit" value="Search"/>
 		`)),
 		string(form("create-post", `
@@ -316,6 +323,14 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 		title, url, content, err = fetchWikipediaContent(keyword)
 		if err != nil {
 			internalServerError(w, "Error fetching Wikipedia article")
+			return
+		}
+	} else if source == "Wikiquote" {
+		var err error
+		title, url, content, err = fetchWikiquoteContent(keyword)
+		if err != nil {
+			fmt.Println(err)
+			internalServerError(w, "Error fetching Wikiquote article")
 			return
 		}
 	} else if source == "Link" {
