@@ -372,15 +372,23 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 	author := template.HTMLEscapeString("Anonymous")
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
+	fmt.Println(title, collection, source, content, author, timestamp)
+
+	linesSet := make(map[string]struct{})
 	lines := strings.Split(content, "\n")
-	var wg sync.WaitGroup
-	errChan := make(chan error, len(lines))
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
+		linesSet[line] = struct{}{}
+	}
+
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(linesSet))
+
+	for line := range linesSet {
 		wg.Add(1)
 		go func(text string) {
 			defer wg.Done()
