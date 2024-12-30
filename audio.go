@@ -123,13 +123,13 @@ func retrieveTTS(text string) ([]byte, int, error) {
 func audioHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		badRequest(w, "Post ID is required")
+		httpError(w, "Post ID is required", http.StatusBadRequest)
 		return
 	}
 
 	stmt, err := db.Prepare("SELECT content FROM posts WHERE id = ?")
 	if err != nil {
-		internalServerError(w, "Unable to retrieve post")
+		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -141,7 +141,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Post not found", http.StatusNotFound)
 			return
 		}
-		internalServerError(w, "Unable to retrieve post")
+		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 
@@ -157,7 +157,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 		var audioContent []byte
 		audioContent, _, err = retrieveTTS(line)
 		if err != nil {
-			internalServerError(w, "Unable to retrieve audio")
+			httpError(w, "Unable to retrieve audio", http.StatusInternalServerError)
 			return
 		}
 

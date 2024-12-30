@@ -87,18 +87,6 @@ func httpError(w http.ResponseWriter, message string, e int) {
 	}
 }
 
-func badRequest(w http.ResponseWriter, message string) {
-	httpError(w, message, http.StatusBadRequest)
-}
-
-func internalServerError(w http.ResponseWriter, message string) {
-	httpError(w, message, http.StatusInternalServerError)
-}
-
-func notFound(w http.ResponseWriter, message string) {
-	httpError(w, message, http.StatusNotFound)
-}
-
 func form(action, content string) template.HTML {
 	return template.HTML(fmt.Sprintf(`<form method="post" action="%s">%s</form>`,
 		action, content))
@@ -203,7 +191,7 @@ func main() {
 			filePath := "./static" + r.URL.Path
 			_, err := os.Stat(filePath)
 			if os.IsNotExist(err) {
-				notFound(w, "Page not found")
+				httpError(w, "Page not found", http.StatusNotFound)
 			} else {
 				fs.ServeHTTP(w, r)
 			}
