@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/trietmn/go-wiki"
-	"strings"
 	"net/url"
+	"strings"
 )
 
 func fetchWikipediaContent(keyword string) (string, string, string, error) {

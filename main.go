@@ -92,20 +92,6 @@ func form(action, content string) template.HTML {
 		action, content))
 }
 
-func formatTime(ms int) string {
-	seconds := ms / 1000
-	minutes := seconds / 60
-	hours := minutes / 60
-
-	if hours > 0 {
-		return fmt.Sprintf("%d:%02d:%02d", hours, minutes%60, seconds%60)
-	} else if minutes > 0 {
-		return fmt.Sprintf("%d:%02d", minutes, seconds%60)
-	} else {
-		return fmt.Sprintf("%d", seconds)
-	}
-}
-
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")

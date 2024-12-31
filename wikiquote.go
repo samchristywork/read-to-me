@@ -3,15 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/k3a/html2text"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"net/url"
-	"github.com/k3a/html2text"
+	"strings"
 )
 
 func fetchWikiquoteContent(keyword string) (string, string, string, error) {
-	keyword=url.QueryEscape(keyword)
+	keyword = url.QueryEscape(keyword)
 	baseURL := "https://en.wikiquote.org/w/api.php"
 	query := fmt.Sprintf("?format=json&action=query&list=search&srsearch=%s", keyword)
 	fullURL := baseURL + query
