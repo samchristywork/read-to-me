@@ -39,7 +39,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 
 	audioContent, audioLength, err := retrieveTTS(text)
 	if err != nil && err != sql.ErrNoRows {
-		perror("Error checking existing audio", err)
+		log.Printf("%s: %v", "Error checking existing audio", err)
 		return "", "", nil, 0, err
 	}
 
@@ -51,7 +51,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	ctx := context.Background()
 	client, err := texttospeech.NewClient(ctx)
 	if err != nil {
-		perror("Error creating text-to-speech client", err)
+		log.Printf("%s: %v", "Error creating text-to-speech client", err)
 		return "", "", nil, 0, err
 	}
 	defer client.Close()
@@ -71,7 +71,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 
 	resp, err := client.SynthesizeSpeech(ctx, &req)
 	if err != nil {
-		perror("Error synthesizing text", err)
+		log.Printf("%s: %v", "Error synthesizing text", err)
 		_, t, c, l, _ := generateTTS("Text could not be synthesized.")
 		_, err = db.Exec(`INSERT INTO audio (hash, text, audio, audio_length_ms)
 			VALUES (?, ?, ?, ?)`, audioHash, t, c, l)
@@ -81,7 +81,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	audioContent = resp.AudioContent
 	audioLength, err = calculateAudioLength(audioContent)
 	if err != nil {
-		perror("Error calculating audio length", err)
+		log.Printf("%s: %v", "Error calculating audio length", err)
 		return "", "", nil, 0, err
 	}
 
@@ -91,7 +91,7 @@ func generateTTS(text string) (string, string, []byte, int, error) {
 	dbMutex.Unlock()
 
 	if err != nil {
-		perror("Error inserting audio into database", err)
+		log.Printf("%s: %v", "Error inserting audio into database", err)
 		return "", "", nil, 0, err
 	}
 
@@ -113,7 +113,7 @@ func retrieveTTS(text string) ([]byte, int, error) {
 	}
 
 	if err != nil {
-		perror("Error fetching audio cache", err)
+		log.Printf("%s: %v", "Error fetching audio cache", err)
 		return nil, 0, err
 	}
 

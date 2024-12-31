@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"strings"
 )
 
@@ -38,7 +39,7 @@ func createPost(title, source, body string) string {
 	var collectionDropdown string
 	rows, err := db.Query(`SELECT id, title FROM collections WHERE author = "Anonymous"`)
 	if err != nil {
-		perror("Error querying collections", err)
+		log.Printf("%s: %v", "Error querying collections", err)
 	} else {
 		defer rows.Close()
 
@@ -50,7 +51,7 @@ func createPost(title, source, body string) string {
 			var title string
 			err := rows.Scan(&id, &title)
 			if err != nil {
-				perror("Error scanning row", err)
+				log.Printf("%s: %v", "Error scanning row", err)
 				continue
 			}
 			collectionDropdown += fmt.Sprintf(`<option value="%d">%s</option>`, id, title)

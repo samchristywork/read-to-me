@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -83,7 +84,7 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 		err := db.QueryRow("SELECT audio_length_ms FROM audio WHERE hash = ?",
 			audioHash).Scan(&audioLength)
 		if err != nil {
-			perror("Error querying audio length", err)
+			log.Printf("%s: %v", "Error querying audio length", err)
 			continue
 		}
 
@@ -126,7 +127,7 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -190,7 +191,7 @@ func viewPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -230,7 +231,7 @@ func editPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -277,7 +278,7 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -316,7 +317,7 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()
 			_, _, _, _, err := generateTTS(text)
 			if err != nil {
-				perror("Error processing line", err)
+				log.Printf("%s: %v", "Error processing line", err)
 				errChan <- err
 			}
 		}(line)
@@ -448,7 +449,7 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -501,7 +502,7 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -521,7 +522,7 @@ func createCollectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 

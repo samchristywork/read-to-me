@@ -23,10 +23,6 @@ var templateFiles embed.FS
 
 var db *sql.DB
 
-func perror(message string, err error) {
-	log.Printf("%s: %v", message, err)
-}
-
 func calculateHash(text string) string {
 	hasher := sha256.New()
 	normalizedText := norm.NFC.String(text)
@@ -37,21 +33,21 @@ func calculateHash(text string) string {
 func renderPage(content string) (string, error) {
 	tmpl, err := templateFiles.ReadFile("template/head.html")
 	if err != nil {
-		perror("Error reading head template", err)
+		log.Printf("%s: %v", "Error reading head template", err)
 		return "", err
 	}
 	head := string(tmpl)
 
 	tmpl, err = templateFiles.ReadFile("template/nav.html")
 	if err != nil {
-		perror("Error reading nav template", err)
+		log.Printf("%s: %v", "Error reading nav template", err)
 		return "", err
 	}
 	nav := string(tmpl)
 
 	tmpl, err = templateFiles.ReadFile("template/footer.html")
 	if err != nil {
-		perror("Error reading footer template", err)
+		log.Printf("%s: %v", "Error reading footer template", err)
 		return "", err
 	}
 	footer := string(tmpl)
@@ -76,14 +72,14 @@ func renderPage(content string) (string, error) {
 func httpError(w http.ResponseWriter, message string, e int) {
 	page, err := renderPage(fmt.Sprintf("<main><h1>Error</h1><p>%s</p></main>", message))
 	if err != nil {
-		perror("Error rendering page", err)
+		log.Printf("%s: %v", "Error rendering page", err)
 		http.Error(w, "Internal Server Error: Unable to load page", e)
 		return
 	}
 
 	_, err = fmt.Fprintln(w, page)
 	if err != nil {
-		perror("Error writing response", err)
+		log.Printf("%s: %v", "Error writing response", err)
 	}
 }
 
@@ -109,7 +105,7 @@ func main() {
 		timestamp TEXT
 	)`)
 	if err != nil {
-		perror("Error creating posts table", err)
+		log.Printf("%s: %v", "Error creating posts table", err)
 		return
 	}
 
@@ -121,7 +117,7 @@ func main() {
 		audio_length_ms INTEGER
 	)`)
 	if err != nil {
-		perror("Error creating audio table", err)
+		log.Printf("%s: %v", "Error creating audio table", err)
 		return
 	}
 
@@ -133,7 +129,7 @@ func main() {
 		timestamp TEXT
 	)`)
 	if err != nil {
-		perror("Error creating collections table", err)
+		log.Printf("%s: %v", "Error creating collections table", err)
 		return
 	}
 
@@ -142,7 +138,7 @@ func main() {
 		post_id INTEGER
 	)`)
 	if err != nil {
-		perror("Error creating collection_posts table", err)
+		log.Printf("%s: %v", "Error creating collection_posts table", err)
 		return
 	}
 
@@ -187,6 +183,6 @@ func main() {
 	fmt.Println("Starting server on :4343")
 	err = http.ListenAndServe(":4343", mux)
 	if err != nil {
-		perror("Error starting server", err)
+		log.Printf("%s: %v", "Error starting server", err)
 	}
 }
