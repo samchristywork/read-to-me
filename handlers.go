@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"html/template"
@@ -546,4 +547,53 @@ func newCollectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/collections", http.StatusSeeOther)
+}
+
+func audioHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		httpError(w, "Post ID is required", http.StatusBadRequest)
+		return
+	}
+
+	stmt, err := db.Prepare("SELECT content FROM posts WHERE id = ?")
+	if err != nil {
+		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	var body string
+	err = stmt.QueryRow(id).Scan(&body)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Post not found", http.StatusNotFound)
+			return
+		}
+		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		return
+	}
+
+	var audioBytes [][]byte
+
+	lines := strings.Split(body, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		var audioContent []byte
+		audioContent, _, err = retrieveTTS(line)
+		if err != nil {
+			httpError(w, "Unable to retrieve audio", http.StatusInternalServerError)
+			return
+		}
+
+		audioBytes = append(audioBytes, audioContent)
+	}
+
+	fullAudio := bytes.Join(audioBytes, []byte(""))
+
+	http.ServeContent(w, r, "audio.mp3", time.Now(), bytes.NewReader(fullAudio))
 }

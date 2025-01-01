@@ -7,6 +7,55 @@ import (
 	"strings"
 )
 
+func collection(id, title, content, author, time, class string) template.HTML {
+	return template.HTML(fmt.Sprintf(`
+		<div class="post %s">
+			<h3><a href="/collection?id=%s">%s</a></h3>
+			<em data-timestamp="%s">%s at %s</em>
+			<div class="post-body">%s</div>
+		</div>
+	`, class, id, title, time, author, time, content))
+}
+
+func renderPage(content string) (string, error) {
+	tmpl, err := templateFiles.ReadFile("template/head.html")
+	if err != nil {
+		log.Printf("%s: %v", "Error reading head template", err)
+		return "", err
+	}
+	head := string(tmpl)
+
+	tmpl, err = templateFiles.ReadFile("template/nav.html")
+	if err != nil {
+		log.Printf("%s: %v", "Error reading nav template", err)
+		return "", err
+	}
+	nav := string(tmpl)
+
+	tmpl, err = templateFiles.ReadFile("template/footer.html")
+	if err != nil {
+		log.Printf("%s: %v", "Error reading footer template", err)
+		return "", err
+	}
+	footer := string(tmpl)
+
+	script := `<script>
+		document.querySelectorAll(".post em").forEach((e) => {
+			const timestamp = e.getAttribute("data-timestamp");
+			const localDate = new Date(timestamp).toLocaleString(undefined, {
+				timeZoneName: "short"
+			});
+			e.textContent = e.textContent.split(" at ")[0] + " at " + localDate;
+		});
+	</script>`
+
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+<head>%s</head>
+<body>%s%s%s</body>%s
+</html>`, head, nav, content, footer, script), nil
+}
+
 func post(id, title, url, content, author, time, class string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 		<div class="post %s">
