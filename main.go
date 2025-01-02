@@ -19,6 +19,20 @@ var templateFiles embed.FS
 
 var db *sql.DB
 
+func httpError(w http.ResponseWriter, message string, e int) {
+	page, err := renderPage(fmt.Sprintf("<main><h1>Error</h1><p>%s</p></main>", message))
+	if err != nil {
+		log.Printf("%s: %v", "Error rendering page", err)
+		http.Error(w, "Internal Server Error: Unable to load page", e)
+		return
+	}
+
+	_, err = fmt.Fprintln(w, page)
+	if err != nil {
+		log.Printf("%s: %v", "Error writing response", err)
+	}
+}
+
 func main() {
 	var err error
 	db, err = sql.Open("sqlite3", "./data.db")
@@ -80,25 +94,25 @@ func main() {
 
 		switch r.URL.Path {
 		case "/":
-			viewPostsHandler(w, r)
+			viewPostsHandler(w, r, httpError)
 		case "/post":
-			viewPostHandler(w, r)
+			viewPostHandler(w, r, httpError)
 		case "/collection":
-			viewCollectionHandler(w, r)
+			viewCollectionHandler(w, r, httpError)
 		case "/collections":
-			viewCollectionsHandler(w, r)
+			viewCollectionsHandler(w, r, httpError)
 		case "/audio":
-			audioHandler(w, r)
+			audioHandler(w, r, httpError)
 		case "/edit-post":
-			editPostHandler(w, r)
+			editPostHandler(w, r, httpError)
 		case "/create-post":
-			createPostHandler(w, r)
+			createPostHandler(w, r, httpError)
 		case "/create-collection":
-			createCollectionHandler(w, r)
+			createCollectionHandler(w, r, httpError)
 		case "/new-post":
-			newPostHandler(w, r)
+			newPostHandler(w, r, httpError)
 		case "/new-collection":
-			newCollectionHandler(w, r)
+			newCollectionHandler(w, r, httpError)
 		default:
 			fs := http.FileServer(http.Dir("./static"))
 			filePath := "./static" + r.URL.Path

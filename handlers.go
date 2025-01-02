@@ -12,17 +12,19 @@ import (
 	"time"
 )
 
-func viewPostHandler(w http.ResponseWriter, r *http.Request) {
+type httpErrorFunc func(w http.ResponseWriter, message string, e int)
+
+func viewPostHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		httpError(w, "Post ID is required", http.StatusBadRequest)
+		errFunc(w, "Post ID is required", http.StatusBadRequest)
 		return
 	}
 
 	stmt, err := db.Prepare(`SELECT title, source, content, author, timestamp
 		FROM posts WHERE id = ?`)
 	if err != nil {
-		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -31,17 +33,17 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 	err = stmt.QueryRow(id).Scan(&title, &source, &body, &author, &timestamp)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			httpError(w, "Post not found", http.StatusNotFound)
+			errFunc(w, "Post not found", http.StatusNotFound)
 			return
 		}
 
-		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 
 	tmpl, err := templateFiles.ReadFile("template/audioControls.html")
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 	audioControls := string(tmpl)
@@ -98,7 +100,7 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	script, err := templateFiles.ReadFile("template/script.js")
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -122,7 +124,7 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	page, err := renderPage(content)
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -132,12 +134,12 @@ func viewPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func viewPostsHandler(w http.ResponseWriter, r *http.Request) {
+func viewPostsHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	rows, err := db.Query(`
 		SELECT id, title, source, content, author, timestamp FROM posts
 		ORDER BY timestamp DESC`)
 	if err != nil {
-		httpError(w, "Unable to load posts", http.StatusInternalServerError)
+		errFunc(w, "Unable to load posts", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -150,7 +152,7 @@ func viewPostsHandler(w http.ResponseWriter, r *http.Request) {
 		var title, source, body, author, timestamp string
 		err := rows.Scan(&id, &title, &source, &body, &author, &timestamp)
 		if err != nil {
-			httpError(w, "Unable to read post data", http.StatusInternalServerError)
+			errFunc(w, "Unable to read post data", http.StatusInternalServerError)
 			return
 		}
 
@@ -178,7 +180,7 @@ func viewPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = rows.Err()
 	if err != nil {
-		httpError(w, "Unable to load posts", http.StatusInternalServerError)
+		errFunc(w, "Unable to load posts", http.StatusInternalServerError)
 		return
 	}
 
@@ -186,7 +188,7 @@ func viewPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -196,17 +198,17 @@ func viewPostsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func editPostHandler(w http.ResponseWriter, r *http.Request) {
+func editPostHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		httpError(w, "Post ID is required", http.StatusBadRequest)
+		errFunc(w, "Post ID is required", http.StatusBadRequest)
 		return
 	}
 
 	stmt, err := db.Prepare(`SELECT title, content, author, source, timestamp
 		FROM posts WHERE id = ?`)
 	if err != nil {
-		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -215,10 +217,10 @@ func editPostHandler(w http.ResponseWriter, r *http.Request) {
 	err = stmt.QueryRow(id).Scan(&title, &body, &author, &source, &timestamp)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			httpError(w, "Post not found", http.StatusNotFound)
+			errFunc(w, "Post not found", http.StatusNotFound)
 			return
 		}
-		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 
@@ -226,7 +228,7 @@ func editPostHandler(w http.ResponseWriter, r *http.Request) {
 	page, err := renderPage(content)
 
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -236,7 +238,7 @@ func editPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createPostHandler(w http.ResponseWriter, r *http.Request) {
+func createPostHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	keyword := r.FormValue("keyword")
 	source := r.FormValue("source")
 
@@ -246,7 +248,7 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 		var err error
 		title, url, content, err = fetchWikipediaContent(keyword)
 		if err != nil {
-			httpError(w, "Error fetching Wikipedia article", http.StatusInternalServerError)
+			errFunc(w, "Error fetching Wikipedia article", http.StatusInternalServerError)
 			return
 		}
 	} else if source == "Wikiquote" {
@@ -254,14 +256,14 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 		title, url, content, err = fetchWikiquoteContent(keyword)
 		if err != nil {
 			fmt.Println(err)
-			httpError(w, "Error fetching Wikiquote article", http.StatusInternalServerError)
+			errFunc(w, "Error fetching Wikiquote article", http.StatusInternalServerError)
 			return
 		}
 	} else if source == "Link" {
 		var err error
 		title, url, content, err = fetchLinkContent(keyword)
 		if err != nil {
-			httpError(w, "Error fetching Link content", http.StatusInternalServerError)
+			errFunc(w, "Error fetching Link content", http.StatusInternalServerError)
 			return
 		}
 	} else {
@@ -273,7 +275,7 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 	pageContent := createPost(title, url, content)
 	page, err := renderPage(pageContent)
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -283,9 +285,9 @@ func createPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newPostHandler(w http.ResponseWriter, r *http.Request) {
+func newPostHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	if r.Method != http.MethodPost {
-		httpError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		errFunc(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -339,7 +341,7 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Fix this
 	if ttsError != nil && !strings.Contains(ttsError.Error(), "UNIQUE constraint failed") {
-		httpError(w, "Error processing text-to-speech", http.StatusInternalServerError)
+		errFunc(w, "Error processing text-to-speech", http.StatusInternalServerError)
 		return
 	}
 
@@ -347,14 +349,14 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 		posts(title, source, content, author, timestamp)
 		VALUES (?, ?, ?, ?, ?)`, title, source, content, author, timestamp)
 	if err != nil {
-		httpError(w, "Error creating post", http.StatusInternalServerError)
+		errFunc(w, "Error creating post", http.StatusInternalServerError)
 		return
 	}
 
 	if collection != "" {
 		lastInsertID, err := result.LastInsertId()
 		if err != nil {
-			httpError(w, "Error getting last insert ID", http.StatusInternalServerError)
+			errFunc(w, "Error getting last insert ID", http.StatusInternalServerError)
 			return
 		}
 
@@ -362,7 +364,7 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 			collection_posts(collection_id, post_id)
 			VALUES (?, ?)`, collection, lastInsertID)
 		if err != nil {
-			httpError(w, "Error adding post to collection", http.StatusInternalServerError)
+			errFunc(w, "Error adding post to collection", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -370,17 +372,17 @@ func newPostHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
+func viewCollectionHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		httpError(w, "Collection ID is required", http.StatusBadRequest)
+		errFunc(w, "Collection ID is required", http.StatusBadRequest)
 		return
 	}
 
 	rows, err := db.Query(`
 		SELECT post_id FROM collection_posts WHERE collection_id = ?`, id)
 	if err != nil {
-		httpError(w, "Unable to load collection", http.StatusInternalServerError)
+		errFunc(w, "Unable to load collection", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -391,14 +393,14 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		var postID int
 		err := rows.Scan(&postID)
 		if err != nil {
-			httpError(w, "Unable to read post data", http.StatusInternalServerError)
+			errFunc(w, "Unable to read post data", http.StatusInternalServerError)
 			return
 		}
 
 		stmt, err := db.Prepare(`SELECT title, source, content, author, timestamp
 			FROM posts WHERE id = ?`)
 		if err != nil {
-			httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+			errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 			return
 		}
 		defer stmt.Close()
@@ -407,10 +409,10 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		err = stmt.QueryRow(postID).Scan(&title, &source, &body, &author, &timestamp)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				httpError(w, "Post not found", http.StatusNotFound)
+				errFunc(w, "Post not found", http.StatusNotFound)
 				return
 			}
-			httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+			errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 			return
 		}
 
@@ -437,14 +439,14 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = rows.Err()
 	if err != nil {
-		httpError(w, "Unable to load collection", http.StatusInternalServerError)
+		errFunc(w, "Unable to load collection", http.StatusInternalServerError)
 		return
 	}
 
 	contentBuilder.WriteString(`</main>`)
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -454,12 +456,12 @@ func viewCollectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
+func viewCollectionsHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	rows, err := db.Query(`
 		SELECT id, title, description, author, timestamp FROM collections
 		ORDER BY timestamp DESC`)
 	if err != nil {
-		httpError(w, "Unable to load collections", http.StatusInternalServerError)
+		errFunc(w, "Unable to load collections", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -474,7 +476,7 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 		var title, description, author, timestamp string
 		err := rows.Scan(&id, &title, &description, &author, &timestamp)
 		if err != nil {
-			httpError(w, "Unable to read collection data", http.StatusInternalServerError)
+			errFunc(w, "Unable to read collection data", http.StatusInternalServerError)
 			return
 		}
 
@@ -490,14 +492,14 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = rows.Err()
 	if err != nil {
-		httpError(w, "Unable to load collections", http.StatusInternalServerError)
+		errFunc(w, "Unable to load collections", http.StatusInternalServerError)
 		return
 	}
 
 	contentBuilder.WriteString(`</main>`)
 	page, err := renderPage(contentBuilder.String())
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -507,7 +509,7 @@ func viewCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createCollectionHandler(w http.ResponseWriter, r *http.Request) {
+func createCollectionHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	html := `<main>` + string(form("new-collection", `
 	<label for="title">Title:</label>
 	<input type="text" id="title" name="title" required><br>
@@ -517,7 +519,7 @@ func createCollectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	page, err := renderPage(html)
 	if err != nil {
-		httpError(w, "Unable to load page", http.StatusInternalServerError)
+		errFunc(w, "Unable to load page", http.StatusInternalServerError)
 		return
 	}
 
@@ -527,12 +529,7 @@ func createCollectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newCollectionHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		httpError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
+func newCollectionHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	title := template.HTMLEscapeString(r.FormValue("title"))
 	description := template.HTMLEscapeString(r.FormValue("description"))
 	author := template.HTMLEscapeString("Anonymous")
@@ -542,23 +539,23 @@ func newCollectionHandler(w http.ResponseWriter, r *http.Request) {
 		collections(title, description, author, timestamp)
 		VALUES (?, ?, ?, ?)`, title, description, author, timestamp)
 	if err != nil {
-		httpError(w, "Unable to create collection", http.StatusInternalServerError)
+		errFunc(w, "Unable to create collection", http.StatusInternalServerError)
 		return
 	}
 
 	http.Redirect(w, r, "/collections", http.StatusSeeOther)
 }
 
-func audioHandler(w http.ResponseWriter, r *http.Request) {
+func audioHandler(w http.ResponseWriter, r *http.Request, errFunc httpErrorFunc) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		httpError(w, "Post ID is required", http.StatusBadRequest)
+		errFunc(w, "Post ID is required", http.StatusBadRequest)
 		return
 	}
 
 	stmt, err := db.Prepare("SELECT content FROM posts WHERE id = ?")
 	if err != nil {
-		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 	defer stmt.Close()
@@ -570,7 +567,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Post not found", http.StatusNotFound)
 			return
 		}
-		httpError(w, "Unable to retrieve post", http.StatusInternalServerError)
+		errFunc(w, "Unable to retrieve post", http.StatusInternalServerError)
 		return
 	}
 
@@ -586,7 +583,7 @@ func audioHandler(w http.ResponseWriter, r *http.Request) {
 		var audioContent []byte
 		audioContent, _, err = retrieveTTS(line)
 		if err != nil {
-			httpError(w, "Unable to retrieve audio", http.StatusInternalServerError)
+			errFunc(w, "Unable to retrieve audio", http.StatusInternalServerError)
 			return
 		}
 
