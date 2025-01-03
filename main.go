@@ -19,6 +19,8 @@ var templateFiles embed.FS
 
 var db *sql.DB
 
+type httpErrorFunc func(w http.ResponseWriter, message string, e int)
+
 func httpError(w http.ResponseWriter, message string, e int) {
 	page, err := renderPage(fmt.Sprintf("<main><h1>Error</h1><p>%s</p></main>", message))
 	if err != nil {

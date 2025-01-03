@@ -66,20 +66,6 @@ func post(id, title, url, content, author, time, class string) template.HTML {
 	`, class, id, title, url, "source", time, author, time, content))
 }
 
-func formatTime(ms int) string {
-	seconds := ms / 1000
-	minutes := seconds / 60
-	hours := minutes / 60
-
-	if hours > 0 {
-		return fmt.Sprintf("%d:%02d:%02d", hours, minutes%60, seconds%60)
-	} else if minutes > 0 {
-		return fmt.Sprintf("%d:%02d", minutes, seconds%60)
-	} else {
-		return fmt.Sprintf("%d", seconds)
-	}
-}
-
 func createPost(title, source, body string) string {
 	title = strings.ReplaceAll(title, `"`, "")
 	source = strings.ReplaceAll(source, `"`, "")
