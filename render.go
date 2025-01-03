@@ -7,14 +7,9 @@ import (
 	"strings"
 )
 
-func collection(id, title, content, author, time, class string) template.HTML {
-	return template.HTML(fmt.Sprintf(`
-		<div class="post %s">
-			<h3><a href="/collection?id=%s">%s</a></h3>
-			<em data-timestamp="%s">%s at %s</em>
-			<div class="post-body">%s</div>
-		</div>
-	`, class, id, title, time, author, time, content))
+func form(action, content string) template.HTML {
+	return template.HTML(fmt.Sprintf(`<form method="post" action="%s">%s</form>`,
+		action, content))
 }
 
 func renderPage(content string) (string, error) {
@@ -54,16 +49,6 @@ func renderPage(content string) (string, error) {
 <head>%s</head>
 <body>%s%s%s</body>%s
 </html>`, head, nav, content, footer, script), nil
-}
-
-func post(id, title, url, content, author, time, class string) template.HTML {
-	return template.HTML(fmt.Sprintf(`
-		<div class="post %s">
-			<h3><a href="/post?id=%s">%s</a> - <a href="%s">%s</a></h3>
-			<em data-timestamp="%s">%s at %s</em>
-			<div class="post-body">%s</div>
-		</div>
-	`, class, id, title, url, "source", time, author, time, content))
 }
 
 func createPost(title, source, body string) string {

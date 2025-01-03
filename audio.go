@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"log"
 	"time"
 
@@ -11,7 +13,15 @@ import (
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/tcolgate/mp3"
+	"golang.org/x/text/unicode/norm"
 )
+
+func calculateHash(text string) string {
+	hasher := sha256.New()
+	normalizedText := norm.NFC.String(text)
+	hasher.Write([]byte(normalizedText))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
 
 func calculateAudioLength(audioContent []byte) (int, error) {
 	reader := bytes.NewReader(audioContent)

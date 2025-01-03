@@ -11,6 +11,26 @@ import (
 	"time"
 )
 
+func post(id, title, url, content, author, time, class string) template.HTML {
+	return template.HTML(fmt.Sprintf(`
+		<div class="post %s">
+			<h3><a href="/post?id=%s">%s</a> - <a href="%s">%s</a></h3>
+			<em data-timestamp="%s">%s at %s</em>
+			<div class="post-body">%s</div>
+		</div>
+	`, class, id, title, url, "source", time, author, time, content))
+}
+
+func collection(id, title, content, author, time, class string) template.HTML {
+	return template.HTML(fmt.Sprintf(`
+		<div class="post %s">
+			<h3><a href="/collection?id=%s">%s</a></h3>
+			<em data-timestamp="%s">%s at %s</em>
+			<div class="post-body">%s</div>
+		</div>
+	`, class, id, title, time, author, time, content))
+}
+
 func formatTime(ms int) string {
 	seconds := ms / 1000
 	minutes := seconds / 60
